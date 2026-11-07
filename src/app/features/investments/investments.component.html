@@ -1,0 +1,190 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>Placements</h1>
+      <p>PEA, compte-titres, crypto : positions au prix de revient unitaire (PRU), plus-values latentes et réalisées, dividendes et rendement annualisé sur vos flux réels.</p>
+    </div>
+    <div class="actions">
+      <button class="btn" type="button" (click)="refresh()" [disabled]="refreshing()"><app-icon name="refresh" size="16" /> {{ refreshing() ? 'Actualisation…' : 'Actualiser les cours' }}</button>
+      <button class="btn" type="button" (click)="assetModal.set({ asset: null })"><app-icon name="plus" size="16" /> Actif</button>
+      <button class="btn primary" type="button" (click)="opModal.set({ op: null })" [disabled]="!data() || !investAccounts().length"><app-icon name="plus" size="16" /> Achat / vente</button>
+    </div>
+  </div>
+
+  @if (store.loaded() && !investAccounts().length) {
+    <div class="notice warning"><app-icon name="info" size="16" /> Créez d'abord une enveloppe PEA, compte-titres ou crypto dans <a routerLink="/accounts">Comptes</a>, puis alimentez-la par un virement depuis votre compte courant.</div>
+  }
+
+  @if (data(); as d) {
+    <section class="sheet kpis">
+      <div class="figure"><span class="label">Valeur totale</span><span class="value big"><span class="marker">{{ d.totals.value | money: 'round' }}</span></span><span class="sub">dont espèces {{ d.totals.cash | money: 'round' }}</span></div>
+      <div class="figure"><span class="label">Apports nets</span><span class="value">{{ d.totals.contributions | money: 'round' }}</span></div>
+      <div class="figure"><span class="label">Gain total</span><span class="value" [class]="d.totals.gain | sign">{{ d.totals.gain | money: 'signed-round' }}</span><span class="sub">{{ d.totals.gain_pct | pct: true }} sur apports</span></div>
+      <div class="figure"><span class="label">Plus-values latentes</span><span class="value" [class]="d.totals.unrealized | sign">{{ d.totals.unrealized | money: 'signed-round' }}</span><span class="sub">{{ d.totals.unrealized_pct | pct: true }} sur PRU</span></div>
+      <div class="figure"><span class="label">Rendement annualisé</span><span class="value">{{ d.totals.xirr === null ? '—' : (d.totals.xirr | pct: true) }}</span><span class="sub">TRI pondéré par les flux</span></div>
+      <div class="figure"><span class="label">Dividendes perçus</span><span class="value">{{ d.totals.dividends | money: 'round' }}</span><span class="sub">réalisé {{ d.totals.realized | money: 'signed-round' }} · frais {{ d.totals.fees | money: 'round' }}</span></div>
+    </section>
+
+    @if (stalePrices() > 0) {
+      <div class="notice warning small"><app-icon name="info" size="16" /> {{ stalePrices() }} cours datent de plus de 3 jours. Cliquez sur « Actualiser les cours » ou mettez-les à jour dans l'onglet Actifs.</div>
+    }
+
+    <section class="grid g-main">
+      <article class="sheet">
+        <div class="sheet-head"><h3>Valeur des placements, 12 mois</h3></div>
+        @if (historyChart(); as cfg) { <app-chart [config]="cfg" [height]="240" label="Valeur des placements" /> }
+      </article>
+      <article class="sheet">
+        <div class="sheet-head">
+          <h3>Diversification</h3>
+          <div class="segmented small-seg">
+            <button type="button" [class.on]="allocView() === 'by_class'" (click)="allocView.set('by_class')">Classe</button>
+            <button type="button" [class.on]="allocView() === 'by_region'" (click)="allocView.set('by_region')">Zone</button>
+            <button type="button" [class.on]="allocView() === 'by_sector'" (click)="allocView.set('by_sector')">Secteur</button>
+          </div>
+        </div>
+        @if (allocChart(); as cfg) {
+          <div class="donut"><app-chart [config]="cfg" [height]="160" label="Diversification du portefeuille" /></div>
+          <div class="legend">
+            @for (a of allocation(); track a.key) {
+              <div class="legend-row"><span class="dot" [style.background]="a.color"></span><span class="ellipsis">{{ a.label }}</span><span class="num soft">{{ a.share | pct: false : 0 }}</span><span class="num">{{ a.value | money: 'round' }}</span></div>
+            }
+          </div>
+        } @else { <p class="empty">Aucune position.</p> }
+      </article>
+    </section>
+
+    <section class="envelopes">
+      @for (a of d.accounts; track a.id) {
+        <article class="sheet env" [class.on]="accountFilter() === a.id" (click)="accountFilter.set(accountFilter() === a.id ? null : a.id)" tabindex="0" (keydown.enter)="accountFilter.set(accountFilter() === a.id ? null : a.id)">
+          <div class="env-head"><span class="swatch" [style.background]="a.color"></span><strong>{{ a.name }}</strong><span class="tag">{{ accountType(a.type) }}</span></div>
+          <div class="num env-value">{{ a.value | money: 'round' }}</div>
+          <div class="small env-meta">
+            @if (a.manual_value !== null) { <span class="muted">Valeur déclarée manuellement</span> } @else {
+            <span [class]="a.gain ?? 0 | sign">{{ a.gain ?? 0 | money: 'signed-round' }} ({{ a.gain_pct ?? 0 | pct: true }})</span>
+            @if (a.xirr !== null && a.xirr !== undefined) { <span class="soft">TRI {{ a.xirr | pct: true }}</span> }
+            }
+          </div>
+          @if (a.ceiling) {
+            <div class="gauge"><span [style.width.%]="((a.deposits ?? 0) / a.ceiling) * 100"></span></div>
+            <span class="xs muted">Versements {{ a.deposits | money: 'round' }} / {{ a.ceiling | money: 'round' }} · reste {{ a.ceiling_remaining | money: 'round' }}</span>
+          }
+          @if (a.tax_free_date) {
+            <span class="xs" [class.credit]="taxFree(a.tax_free_date)" [class.muted]="!taxFree(a.tax_free_date)">{{ taxFree(a.tax_free_date) ? 'Plus de 5 ans : exonération d’IR acquise' : 'Exonération d’IR le ' + (a.tax_free_date | frDate: 'long') }}</span>
+          }
+        </article>
+      }
+    </section>
+
+    <section class="sheet ledger">
+      <div class="sheet-head">
+        <div class="segmented">
+          <button type="button" [class.on]="tab() === 'positions'" (click)="tab.set('positions')">Positions</button>
+          <button type="button" [class.on]="tab() === 'operations'" (click)="tab.set('operations')">Opérations</button>
+          <button type="button" [class.on]="tab() === 'assets'" (click)="tab.set('assets')">Actifs</button>
+          @if (d.closed_positions.length) { <button type="button" [class.on]="tab() === 'closed'" (click)="tab.set('closed')">Soldées</button> }
+        </div>
+        @if (accountFilter()) { <button class="link" type="button" (click)="accountFilter.set(null)">Toutes les enveloppes</button> }
+      </div>
+
+      @switch (tab()) {
+        @case ('positions') {
+          <div class="table-wrap">
+            <table class="ledger-table">
+              <thead><tr><th>Actif</th><th class="hide-md">Enveloppe</th><th class="num">Quantité</th><th class="num">PRU</th><th class="num">Cours</th><th class="num">Valeur</th><th class="num">+/- latente</th><th class="num hide-md">Poids</th></tr></thead>
+              <tbody>
+                @for (p of positions(); track p.account_id + '-' + p.asset_id) {
+                  <tr>
+                    <td><strong class="mono">{{ p.symbol }}</strong> <span class="tag">{{ classLabel(p.asset_class) }}</span><br /><span class="xs muted ellipsis">{{ p.name }}</span></td>
+                    <td class="hide-md small soft">{{ p.account_name }}</td>
+                    <td class="num">{{ p.quantity.toLocaleString('fr-FR', { maximumFractionDigits: 6 }) }}</td>
+                    <td class="num soft">{{ p.avg_price | money: '' : p.currency }}</td>
+                    <td class="num">{{ p.price | money: '' : p.currency }}</td>
+                    <td class="num">{{ p.value | money }}</td>
+                    <td class="num" [class]="p.unrealized | sign">{{ p.unrealized | money: 'signed' }}<br /><span class="xs">{{ p.unrealized_pct | pct: true }}</span></td>
+                    <td class="num hide-md soft">{{ p.weight | pct }}</td>
+                  </tr>
+                } @empty { <tr><td colspan="8"><div class="empty">Aucune position. Enregistrez un achat.</div></td></tr> }
+              </tbody>
+              @if (positions().length) {
+                <tfoot><tr><td>Total</td><td class="hide-md"></td><td></td><td></td><td></td><td class="num">{{ posTotals().value | money }}</td><td class="num" [class]="posTotals().unrealized | sign">{{ posTotals().unrealized | money: 'signed' }}</td><td class="hide-md"></td></tr></tfoot>
+              }
+            </table>
+          </div>
+        }
+        @case ('operations') {
+          <div class="table-wrap">
+            <table class="ledger-table">
+              <thead><tr><th>Date</th><th>Type</th><th>Actif</th><th class="hide-md">Enveloppe</th><th class="num">Qté</th><th class="num">Prix</th><th class="num">Montant</th><th></th></tr></thead>
+              <tbody>
+                @for (o of operations(); track o.id) {
+                  @if (!accountFilter() || o.account_id === accountFilter()) {
+                    <tr>
+                      <td class="nowrap soft">{{ o.date | frDate }}</td>
+                      <td><span class="tag" [class.good]="o.type === 'dividend' || o.type === 'interest'" [class.bad]="o.type === 'fee'">{{ opLabels[o.type] }}</span></td>
+                      <td class="mono">{{ o.asset?.symbol ?? '—' }}</td>
+                      <td class="hide-md small soft">{{ o.account?.name }}</td>
+                      <td class="num">{{ o.quantity ? o.quantity.toLocaleString('fr-FR', { maximumFractionDigits: 6 }) : '' }}</td>
+                      <td class="num soft">{{ o.price ? (o.price | money: '' : o.asset?.currency) : '' }}</td>
+                      <td class="num">{{ (o.type === 'buy' || o.type === 'sell' ? o.quantity * o.price * o.fx_rate : o.amount) | money }}</td>
+                      <td class="row-actions"><button class="btn-icon" type="button" (click)="opModal.set({ op: o })" aria-label="Modifier"><app-icon name="edit" size="16" /></button></td>
+                    </tr>
+                  }
+                } @empty { <tr><td colspan="8"><div class="empty">Aucune opération.</div></td></tr> }
+              </tbody>
+            </table>
+          </div>
+        }
+        @case ('assets') {
+          <div class="table-wrap">
+            <table class="ledger-table">
+              <thead><tr><th>Symbole</th><th>Nom</th><th class="hide-md">Classe</th><th class="hide-md">Source</th><th class="num">Cours</th><th class="hide-md">Mis à jour</th><th></th></tr></thead>
+              <tbody>
+                @for (a of assets(); track a.id) {
+                  <tr>
+                    <td class="mono"><strong>{{ a.symbol }}</strong>@if (a.pea_eligible) { <span class="tag">PEA</span> }</td>
+                    <td class="ellipsis" style="max-width: 260px">{{ a.name }}</td>
+                    <td class="hide-md small">{{ classLabel(a.asset_class) }}</td>
+                    <td class="hide-md small soft">{{ a.price_source === 'manual' ? 'Manuelle' : a.price_source === 'yahoo' ? 'Yahoo · ' + a.source_id : 'CoinGecko · ' + a.source_id }}</td>
+                    <td class="num">{{ a.current_price | money: '' : a.currency }}</td>
+                    <td class="hide-md small soft">{{ a.price_updated_at | frDate }}</td>
+                    <td class="row-actions"><button class="btn-icon" type="button" (click)="assetModal.set({ asset: a })" aria-label="Modifier"><app-icon name="edit" size="16" /></button></td>
+                  </tr>
+                } @empty { <tr><td colspan="7"><div class="empty">Aucun actif.</div></td></tr> }
+              </tbody>
+            </table>
+          </div>
+        }
+        @case ('closed') {
+          <div class="table-wrap">
+            <table class="ledger-table">
+              <thead><tr><th>Actif</th><th>Enveloppe</th><th class="num">Plus-value réalisée</th><th class="num">Dividendes</th></tr></thead>
+              <tbody>
+                @for (p of d.closed_positions; track p.account_id + '-' + p.asset_id) {
+                  <tr><td class="mono">{{ p.symbol }}</td><td class="small soft">{{ p.account_name }}</td><td class="num" [class]="p.realized | sign">{{ p.realized | money: 'signed' }}</td><td class="num">{{ p.dividends | money }}</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+    </section>
+
+    <section class="sheet">
+      <div class="sheet-head"><h3>Revenus du portefeuille</h3><span class="small soft">12 mois : <strong class="num">{{ dividends12m() | money }}</strong></span></div>
+      @if (dividendChart(); as cfg) { <app-chart [config]="cfg" [height]="180" label="Dividendes et intérêts par mois" /> }
+    </section>
+  } @else {
+    <div class="sheet skeleton" style="height: 160px"></div>
+  }
+</div>
+
+<app-modal [open]="!!opModal() && !assetModal()" [title]="opModal()?.op ? 'Modifier l’opération' : 'Nouvelle opération de bourse'" (closed)="opModal.set(null)">
+  @if (opModal(); as m) {
+    <app-operation-form [operation]="m.op" [accounts]="investAccounts()" [assets]="assets()" [defaultAccount]="accountFilter()" (saved)="onOpSaved()" (closed)="opModal.set(null)" (newAsset)="assetModal.set({ asset: null })" />
+  }
+</app-modal>
+
+<app-modal [open]="!!assetModal()" [title]="assetModal()?.asset ? 'Modifier l’actif' : 'Nouvel actif'" [wide]="true" (closed)="assetModal.set(null)">
+  @if (assetModal(); as m) { <app-asset-form [asset]="m.asset" (saved)="onAssetSaved()" (closed)="assetModal.set(null)" /> }
+</app-modal>

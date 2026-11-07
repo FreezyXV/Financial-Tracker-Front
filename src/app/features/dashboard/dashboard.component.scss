@@ -1,0 +1,18 @@
+.hero { display: grid; gap: var(--sp-4); }
+.hero-figures { display: flex; gap: var(--sp-6); flex-wrap: wrap; align-items: flex-end; }
+.statement { margin: 0; display: grid; }
+.statement div { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--rule); font-size: var(--fs-sm); }
+.statement dt { color: var(--ink-2); }
+.statement dd { margin: 0; }
+.statement .total { border-top: 1px solid var(--ink); border-bottom: 3px double var(--ink); font-weight: 600; }
+.statement .total dt { color: var(--ink); }
+.rate { display: grid; gap: 6px; margin-top: var(--sp-4); }
+.rate-head { display: flex; justify-content: space-between; align-items: baseline; }
+.mini-figs { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+.mini-figs .value { font-size: var(--fs-lg); }
+.donut { max-width: 220px; margin: 0 auto var(--sp-3); }
+.budget { display: grid; gap: 5px; padding: 8px 0; }
+.budget-line { display: flex; justify-content: space-between; gap: 8px; font-size: var(--fs-sm); }
+.date-chip { font-size: var(--fs-xs); color: var(--ink-2); width: 52px; flex-shrink: 0; }
+.tight { gap: var(--sp-4) var(--sp-3); }
+a.notice { text-decoration: none; color: var(--ink); }

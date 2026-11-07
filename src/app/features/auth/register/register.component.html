@@ -1,1 +1,28 @@
-<p>register works!</p>
+<div class="auth">
+  <aside class="auth-side">
+    <div>
+      <span class="brand">Registre</span>
+      <h1>Commencez par vos comptes. Le reste se calcule.</h1>
+    </div>
+    <ul>
+      <li><b>1</b><span>Déclarez vos comptes et leur solde du jour</span></li>
+      <li><b>2</b><span>Importez vos relevés CSV : catégorisation automatique</span></li>
+      <li><b>3</b><span>Ajoutez vos lignes PEA, CTO et crypto</span></li>
+      <li><b>4</b><span>Recevez votre bilan mensuel et vos alertes de budget</span></li>
+    </ul>
+    <p class="xs" style="color: #8fa0b8">25 catégories et des règles bancaires françaises sont créées pour vous.</p>
+  </aside>
+  <main class="auth-main">
+    <form class="auth-card form" (ngSubmit)="register()">
+      <div>
+        <h2>Créer un compte</h2>
+        <p class="soft small">Déjà inscrit ? <a routerLink="/login">Se connecter</a></p>
+      </div>
+      <label class="field"><span>Nom</span><input name="name" [(ngModel)]="name" required autocomplete="name" /></label>
+      <label class="field"><span>Email</span><input type="email" name="email" [(ngModel)]="email" required autocomplete="email" /></label>
+      <label class="field"><span>Mot de passe</span><input type="password" name="password" [(ngModel)]="password" required minlength="8" autocomplete="new-password" /><small>8 caractères minimum</small></label>
+      <label class="field"><span>Confirmation</span><input type="password" name="password_confirmation" [(ngModel)]="password_confirmation" required autocomplete="new-password" /></label>
+      <button class="btn primary" type="submit" [disabled]="busy()">{{ busy() ? 'Création…' : 'Créer mon registre' }}</button>
+    </form>
+  </main>
+</div>

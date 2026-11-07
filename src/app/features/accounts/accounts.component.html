@@ -1,0 +1,115 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>Comptes</h1>
+      <p>Chaque enveloppe avec son solde, ses plafonds réglementaires et sa fiscalité. Le patrimoine net additionne tout ce qui est coché « inclus ».</p>
+    </div>
+    <div class="actions">
+      @if (archivedCount()) {
+        <label class="check small"><input type="checkbox" [checked]="showArchived()" (change)="showArchived.set(!showArchived())" /> Archivés ({{ archivedCount() }})</label>
+      }
+      <button class="btn primary" type="button" (click)="open()"><app-icon name="plus" size="16" /> Nouveau compte</button>
+    </div>
+  </div>
+
+  @if (onboarding || (store.loaded() && !store.accounts().length)) {
+    <div class="notice good">
+      <app-icon name="info" size="16" />
+      <span>Commencez par déclarer vos comptes avec leur solde d'aujourd'hui (champ « Solde initial »). Ensuite : importez vos relevés depuis <a routerLink="/transactions">Opérations</a> et ajoutez vos lignes de bourse dans <a routerLink="/investments">Placements</a>.</span>
+    </div>
+  }
+
+  <section class="sheet nw">
+    <div class="figure"><span class="label">Patrimoine net</span><span class="value big"><span class="marker">{{ netWorth() | money: 'round' }}</span></span></div>
+    <div class="bars">
+      @for (g of groups(); track g.key) {
+        @if (g.total > 0) { <span [style.flex-grow]="g.total" [style.background]="g.color" [title]="g.label"></span> }
+      }
+    </div>
+    <div class="legend inline">
+      @for (g of groups(); track g.key) {
+        <span class="small"><span class="dot" [style.background]="g.color"></span> {{ g.label }} <span class="num">{{ g.total | money: 'round' }}</span></span>
+      }
+    </div>
+  </section>
+
+  @for (g of groups(); track g.key) {
+    <section class="sheet ledger">
+      <div class="sheet-head"><h3>{{ g.label }}</h3><span class="num">{{ g.total | money }}</span></div>
+      <div class="accounts">
+        @for (a of g.accounts; track a.id) {
+          <article class="acc" [class.archived]="a.is_archived">
+            <div class="acc-head">
+              <span class="swatch" [style.background]="a.color"></span>
+              <div class="grow">
+                <h4>{{ a.name }}</h4>
+                <span class="xs muted">{{ meta(a.type)?.label }}@if (a.institution) { · {{ a.institution }} }@if (a.interest_rate) { · {{ a.interest_rate }} % }</span>
+              </div>
+              <button class="btn-icon" type="button" (click)="open(a)" aria-label="Modifier le compte"><app-icon name="edit" size="16" /></button>
+            </div>
+            <div class="acc-value num" [class.debit]="a.value < 0">{{ a.value | money }}</div>
+            @if (isInvestment(a.type) && a.contributions !== undefined && a.manual_value === null) {
+              <div class="acc-meta small">
+                <span>Versé {{ a.contributions | money: 'round' }}</span>
+                <span [class]="a.gain ?? 0 | sign">{{ a.gain ?? 0 | money: 'signed-round' }} ({{ a.gain_pct ?? 0 | pct: true }})</span>
+                @if (a.xirr !== null && a.xirr !== undefined) { <span>TRI {{ a.xirr | pct: true }}</span> }
+                @if (a.holdings_value !== undefined) { <span class="muted">Espèces {{ a.balance | money: 'round' }}</span> }
+              </div>
+            }
+            @if (ceiling(a); as c) {
+              <div class="ceil">
+                <div class="gauge" [class.warning]="c.pct >= 90"><span [style.width.%]="c.pct"></span></div>
+                <span class="xs muted">{{ c.used | money: 'round' }} versés sur {{ c.max | money: 'round' }} de plafond</span>
+              </div>
+            }
+            @if (a.tax_free_date) {
+              <span class="tag" [class.good]="taxFreeReached(a)">
+                @if (taxFreeReached(a)) { Fiscalité avantageuse acquise } @else { Avantage fiscal le {{ a.tax_free_date | frDate: 'long' }} }
+              </span>
+            }
+            @if (a.type === 'loan') { <span class="xs muted">Capital restant dû</span> }
+            <a class="link xs" routerLink="/transactions" [queryParams]="{ account_id: a.id }">Voir les opérations</a>
+          </article>
+        }
+      </div>
+    </section>
+  }
+</div>
+
+<app-modal [open]="!!draft()" [title]="draft()?.id ? 'Modifier le compte' : 'Nouveau compte'" (closed)="draft.set(null)">
+  @if (draft(); as d) {
+    <form class="form" (ngSubmit)="save()">
+      <div class="row">
+        <label class="field"><span>Nom</span><input name="name" required [ngModel]="d.name" (ngModelChange)="patch({ name: $event })" placeholder="ex. Compte joint, PEA Bourso" /></label>
+        <label class="field"><span>Type</span>
+          <select name="type" [ngModel]="d.type" (ngModelChange)="patch({ type: $event })">
+            @for (t of types; track t.key) { <option [value]="t.key">{{ t.label }}</option> }
+          </select>
+        </label>
+      </div>
+      @if (meta(d.type)?.hint) { <p class="xs muted">{{ meta(d.type)?.hint }}</p> }
+      <div class="row">
+        <label class="field"><span>Établissement</span><input name="inst" [ngModel]="d.institution" (ngModelChange)="patch({ institution: $event })" placeholder="BoursoBank, Fortuneo, Trade Republic…" /></label>
+        <label class="field"><span>Date d'ouverture</span><input type="date" name="opened" [ngModel]="d.opened_at" (ngModelChange)="patch({ opened_at: $event || null })" /><small>Sert au calcul de l'ancienneté fiscale</small></label>
+      </div>
+      <div class="row">
+        <label class="field"><span>Solde initial (€)</span><input type="number" step="0.01" name="ob" [ngModel]="d.opening_balance" (ngModelChange)="patch({ opening_balance: $event })" /><small>{{ d.type === 'loan' ? 'Montant négatif : capital restant dû' : 'Solde à la date d’ouverture ou au début du suivi' }}</small></label>
+        <label class="field"><span>Taux d'intérêt (%)</span><input type="number" step="0.01" name="rate" [ngModel]="d.interest_rate" (ngModelChange)="patch({ interest_rate: $event })" /></label>
+      </div>
+      <label class="field"><span>Valeur estimée manuelle (€)</span><input type="number" step="0.01" name="mv" [ngModel]="d.manual_value" (ngModelChange)="patch({ manual_value: $event })" /><small>Pour un bien immobilier ou une assurance-vie suivie sans le détail des supports. Laisser vide sinon.</small></label>
+      <div class="field"><span>Couleur</span>
+        <div class="swatches">
+          @for (c of palette; track c) { <button type="button" class="sw" [style.background]="c" [class.on]="d.color === c" (click)="patch({ color: c })" [attr.aria-label]="'Couleur ' + c"></button> }
+        </div>
+      </div>
+      <label class="check"><input type="checkbox" name="inw" [ngModel]="d.include_in_net_worth" (ngModelChange)="patch({ include_in_net_worth: $event })" /> Inclure dans le patrimoine net et les bilans</label>
+      <label class="check"><input type="checkbox" name="arch" [ngModel]="d.is_archived" (ngModelChange)="patch({ is_archived: $event })" /> Compte clôturé (archivé)</label>
+      <div class="form-actions">
+        @if (d.id) { <button type="button" class="btn danger" (click)="remove()">Supprimer</button> }
+        <span class="spacer"></span>
+        <button type="button" class="btn" (click)="draft.set(null)">Annuler</button>
+        <button type="submit" class="btn primary">Enregistrer</button>
+      </div>
+    </form>
+  }
+</app-modal>

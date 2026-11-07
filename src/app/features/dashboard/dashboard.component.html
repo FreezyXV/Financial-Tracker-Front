@@ -1,0 +1,164 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>Synthèse</h1>
+      <p>Patrimoine net, trésorerie du mois et prochaines échéances.</p>
+    </div>
+    <div class="actions">
+      <a class="btn" routerLink="/reports"><app-icon name="report" size="16" /> Bilan du mois</a>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="notice danger">Impossible de joindre l'API. Lancez le backend Laravel (<code>php artisan serve</code>) puis rechargez la page.</div>
+  }
+
+  @if (data(); as d) {
+    @if (d.uncategorized > 0) {
+      <a class="notice warning" routerLink="/transactions" [queryParams]="{ category_id: 'none' }">
+        <app-icon name="info" size="16" /> {{ d.uncategorized }} opération(s) sans catégorie faussent vos bilans. Les classer →
+      </a>
+    }
+
+    <section class="grid g-main">
+      <article class="sheet hero">
+        <div class="hero-figures">
+          <div class="figure">
+            <span class="label">Patrimoine net</span>
+            <span class="value big"><span class="marker">{{ d.net_worth.net_worth | money: 'round' }}</span></span>
+            <span class="sub">Actifs {{ d.net_worth.assets | money: 'round' }} · Dettes {{ d.net_worth.liabilities | money: 'round' }}</span>
+          </div>
+          <div class="figure">
+            <span class="label">30 derniers jours</span>
+            <span class="value" [class]="d.change_30d | sign">{{ d.change_30d | money: 'signed-round' }}</span>
+          </div>
+          <div class="figure">
+            <span class="label">Depuis le 1er janvier</span>
+            <span class="value" [class]="d.change_ytd | sign">{{ d.change_ytd | money: 'signed-round' }}</span>
+          </div>
+        </div>
+        @if (historyChart(); as cfg) { <app-chart [config]="cfg" [height]="240" label="Évolution du patrimoine sur 12 mois" /> }
+      </article>
+
+      <article class="sheet ledger month">
+        <div class="sheet-head"><h3>Ce mois-ci</h3><a routerLink="/reports">Détail</a></div>
+        <dl class="statement">
+          <div><dt>Revenus</dt><dd class="num credit">{{ d.month.income | money }}</dd></div>
+          <div><dt>Dépenses</dt><dd class="num debit">−{{ d.month.expense | money }}</dd></div>
+          <div class="total"><dt>Solde du mois</dt><dd class="num" [class]="d.month.savings | sign">{{ d.month.savings | money: 'signed' }}</dd></div>
+          <div><dt>Versé en placements</dt><dd class="num">{{ d.month.invested | money }}</dd></div>
+        </dl>
+        <div class="rate">
+          <div class="rate-head">
+            <span class="small soft">Taux d'épargne</span>
+            <span class="num">{{ d.month.savings_rate | pct }}</span>
+          </div>
+          <div class="gauge" [class.ok]="savingsGap() >= 0" [class.warning]="savingsGap() < 0">
+            <span [style.width.%]="d.month.savings_rate > 0 ? (d.month.savings_rate > 100 ? 100 : d.month.savings_rate) : 0"></span>
+          </div>
+          <span class="xs muted">Objectif {{ d.indicators.savings_rate_target }} % · moyenne 6 mois {{ d.indicators.avg_savings_rate | pct }}</span>
+        </div>
+        <hr class="rule" />
+        <div class="mini-figs">
+          <div class="figure">
+            <span class="label">Épargne de précaution</span>
+            <span class="value">{{ d.indicators.emergency_fund_months ?? '—' }} <span class="small soft">mois</span></span>
+            <span class="sub">{{ d.indicators.liquid_savings | money: 'round' }} disponibles</span>
+          </div>
+          <div class="figure">
+            <span class="label">Dépenses moyennes</span>
+            <span class="value">{{ d.indicators.avg_monthly_expense | money: 'round' }}</span>
+            <span class="sub">par mois, sur 6 mois</span>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="grid g-main">
+      <article class="sheet">
+        <div class="sheet-head"><h3>Revenus et dépenses, 12 mois</h3></div>
+        @if (cashChart(); as cfg) { <app-chart [config]="cfg" [height]="250" label="Revenus et dépenses mensuels" /> }
+      </article>
+      <article class="sheet">
+        <div class="sheet-head"><h3>Répartition</h3><a routerLink="/investments">Placements</a></div>
+        @if (allocChart(); as cfg) {
+          <div class="donut"><app-chart [config]="cfg" [height]="170" label="Répartition du patrimoine" /></div>
+          <div class="legend">
+            @for (a of allocation(); track a.key) {
+              <div class="legend-row"><span class="dot" [style.background]="a.color"></span><span>{{ a.label }}</span><span class="num soft">{{ a.share | pct: false : 0 }}</span><span class="num">{{ a.value | money: 'round' }}</span></div>
+            }
+          </div>
+        } @else { <p class="empty">Aucun actif.</p> }
+      </article>
+    </section>
+
+    <section class="grid g-3">
+      <article class="sheet">
+        <div class="sheet-head"><h3>Budgets du mois</h3><a routerLink="/budgets">Gérer</a></div>
+        @for (b of d.budgets; track b.id) {
+          <div class="budget">
+            <div class="budget-line"><span class="cat"><span class="dot" [style.background]="b.color"></span>{{ b.name }}</span><span class="num small">{{ b.spent | money: 'round' }} / {{ b.limit | money: 'round' }}</span></div>
+            <div class="gauge" [class]="b.status"><span [style.width.%]="b.percent > 100 ? 100 : b.percent"></span></div>
+          </div>
+        } @empty {
+          <div class="empty">Aucun budget. <br /><a class="btn" routerLink="/budgets">Créer un budget</a></div>
+        }
+      </article>
+
+      <article class="sheet">
+        <div class="sheet-head"><h3>À venir, 3 semaines</h3><a routerLink="/recurring">Échéancier</a></div>
+        <div class="list">
+          @for (u of d.upcoming; track u.recurring_id + u.date) {
+            <div class="list-item">
+              <span class="date-chip num">{{ u.date | frDate: 'day' }}</span>
+              <span class="grow ellipsis small">{{ u.description }}</span>
+              <span class="num small" [class.credit]="u.type === 'income'">{{ u.type === 'income' ? '+' : u.type === 'expense' ? '−' : '' }}{{ u.amount | money }}</span>
+            </div>
+          } @empty { <p class="empty">Aucune échéance programmée.</p> }
+        </div>
+      </article>
+
+      <article class="sheet">
+        <div class="sheet-head"><h3>Objectifs</h3><a routerLink="/goals">Tous</a></div>
+        @for (g of d.goals; track g.id) {
+          <div class="budget">
+            <div class="budget-line"><span class="small ellipsis">{{ g.name }}</span><span class="num small">{{ g.percent | pct: false : 0 }}</span></div>
+            <div class="gauge"><span [style.width.%]="g.percent" [style.background]="g.color"></span></div>
+            <span class="xs muted">{{ g.current | money: 'round' }} sur {{ g.target_amount | money: 'round' }}@if (g.monthly_needed) { · {{ g.monthly_needed | money: 'round' }}/mois }</span>
+          </div>
+        } @empty { <div class="empty">Aucun objectif.<br /><a class="btn" routerLink="/goals">Fixer un objectif</a></div> }
+      </article>
+    </section>
+
+    <section class="grid g-main">
+      <article class="sheet ledger">
+        <div class="sheet-head"><h3>Dernières opérations</h3><a routerLink="/transactions">Toutes les opérations</a></div>
+        <div class="table-wrap">
+          <table class="ledger-table">
+            <tbody>
+              @for (t of d.recent; track t.id) {
+                <tr>
+                  <td class="nowrap soft">{{ t.date | frDate: 'day' }}</td>
+                  <td class="ellipsis" style="max-width: 280px">{{ t.description || '—' }}</td>
+                  <td>@if (t.category) { <span class="cat small"><span class="dot" [style.background]="t.category.color"></span>{{ t.category.name }}</span> } @else if (t.type === 'transfer') { <span class="tag">Virement</span> }</td>
+                  <td class="num" [class.credit]="t.type === 'income'" [class.soft]="t.type === 'transfer'">{{ t.type === 'expense' ? '−' : t.type === 'income' ? '+' : '' }}{{ t.amount | money }}</td>
+                </tr>
+              } @empty { <tr><td class="empty">Aucune opération. Utilisez « Opération » en haut à droite.</td></tr> }
+            </tbody>
+          </table>
+        </div>
+      </article>
+      <article class="sheet">
+        <div class="sheet-head"><h3>Portefeuille</h3><a routerLink="/investments">Positions</a></div>
+        <div class="grid g-2 tight">
+          <div class="figure"><span class="label">Valeur</span><span class="value">{{ d.portfolio.value | money: 'round' }}</span></div>
+          <div class="figure"><span class="label">Versé</span><span class="value">{{ d.portfolio.contributions | money: 'round' }}</span></div>
+          <div class="figure"><span class="label">Gain total</span><span class="value" [class]="d.portfolio.gain | sign">{{ d.portfolio.gain | money: 'signed-round' }}</span><span class="sub">{{ d.portfolio.gain_pct | pct: true }}</span></div>
+          <div class="figure"><span class="label">Rendement annualisé</span><span class="value">{{ d.portfolio.xirr === null ? '—' : (d.portfolio.xirr | pct: true) }}</span><span class="sub">TRI, flux réels</span></div>
+        </div>
+      </article>
+    </section>
+  } @else if (!error()) {
+    <div class="grid g-main"><div class="sheet skeleton" style="height: 320px"></div><div class="sheet skeleton" style="height: 320px"></div></div>
+  }
+</div>

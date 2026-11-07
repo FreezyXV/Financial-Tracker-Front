@@ -1,9 +1,0 @@
-<h2>Register</h2>
-<form (submit)="register(); $event.preventDefault()">
-  <input [(ngModel)]="name" name="name" placeholder="Name" />
-  <input [(ngModel)]="email" name="email" placeholder="Email" />
-  <input [(ngModel)]="password" name="password" type="password" placeholder="Password" />
-  <input [(ngModel)]="password_confirmation" name="password_confirmation" type="password" placeholder="Confirm Password" />
-  <button type="submit">Register</button>
-  <p *ngIf="error" style="color: red">{{ error }}</p>
-</form>

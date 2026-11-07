@@ -1,1 +1,28 @@
-<p>login works!</p>
+<div class="auth">
+  <aside class="auth-side">
+    <div>
+      <span class="brand">Registre</span>
+      <h1>Votre patrimoine, tenu comme un grand livre.</h1>
+    </div>
+    <ul>
+      <li><b>Comptes</b><span>Courant, Livret A, LDDS, PEA, CTO, assurance-vie, crypto, crédits</span></li>
+      <li><b>Placements</b><span>PRU, plus-values, dividendes, rendement annualisé (TRI)</span></li>
+      <li><b>Bilans</b><span>Revenus, dépenses, taux d'épargne et constats chaque mois</span></li>
+      <li><b>Projection</b><span>Date d'indépendance financière selon votre effort d'épargne</span></li>
+    </ul>
+    <p class="xs" style="color: #8fa0b8">Données hébergées sur votre propre serveur.</p>
+  </aside>
+  <main class="auth-main">
+    <form class="auth-card form" (ngSubmit)="login()">
+      <div>
+        <h2>Connexion</h2>
+        <p class="soft small">Pas encore de compte ? <a routerLink="/register">Créer un compte</a></p>
+      </div>
+      <label class="field"><span>Email</span><input type="email" name="email" [(ngModel)]="email" required autocomplete="email" /></label>
+      <label class="field"><span>Mot de passe</span><input type="password" name="password" [(ngModel)]="password" required autocomplete="current-password" /></label>
+      <button class="btn primary" type="submit" [disabled]="busy()">{{ busy() ? 'Connexion…' : 'Se connecter' }}</button>
+      <p class="demo">Compte de démonstration : <code>demo&#64;finance.test</code> / <code>password</code>
+        — <button type="button" class="link" (click)="fillDemo()">remplir</button></p>
+    </form>
+  </main>
+</div>

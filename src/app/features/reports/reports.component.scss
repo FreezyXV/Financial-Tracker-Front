@@ -1,0 +1,36 @@
+.period { display: flex; align-items: center; gap: 4px; }
+.cap { text-transform: capitalize; min-width: 120px; text-align: center; }
+td.cap { text-align: left; }
+.statement .sub td { font-size: var(--fs-xs); color: var(--ink-3); }
+.statement tfoot .balance td { border-top: 1px solid var(--ink); border-bottom: 3px double var(--ink); font-size: var(--fs-md); }
+.rate-line { display: flex; gap: var(--sp-6); flex-wrap: wrap; margin-top: var(--sp-4); align-items: flex-end; }
+.insights { display: grid; gap: var(--sp-2); }
+.mt { margin-top: var(--sp-5); }
+.split { display: flex; height: 14px; border-radius: 2px; overflow: hidden; gap: 2px; margin: var(--sp-2) 0; }
+.needs { background: var(--ink); }
+.wants { background: var(--brass); }
+.save { background: var(--credit); }
+.split-legend { display: flex; gap: var(--sp-4); flex-wrap: wrap; }
+.split-legend > span { display: inline-flex; align-items: center; gap: 6px; }
+.bridge { display: grid; gap: var(--sp-3); }
+.bridge-row { display: grid; grid-template-columns: 150px 1fr 100px; gap: var(--sp-3); align-items: center; }
+.bridge-bar { height: 14px; background: var(--sheet-2); border-radius: 2px; }
+.bridge-bar span { display: block; height: 100%; border-radius: 2px; }
+.bridge-bar .base { background: var(--ink); }
+.bridge-bar .up { background: var(--credit); }
+.bridge-bar .down { background: var(--debit); }
+.bridge-row .num { text-align: right; }
+.hbar { height: 6px; background: var(--sheet-2); border-radius: 3px; }
+.hbar span { display: block; height: 100%; border-radius: 3px; }
+.bud { display: grid; gap: 4px; padding: 6px 0; }
+.bud-line { display: flex; justify-content: space-between; }
+.kpis-year { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--sp-4); align-items: end; }
+@media (max-width: 1080px) { .kpis-year { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 640px) {
+  .kpis-year { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hide-sm { display: none; }
+  .bridge-row { grid-template-columns: 110px 1fr 84px; }
+}
+@media print {
+  :host ::ng-deep .no-print { display: none !important; }
+}

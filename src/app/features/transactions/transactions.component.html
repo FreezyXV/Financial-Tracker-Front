@@ -1,0 +1,127 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>Opérations</h1>
+      <p>Toutes vos écritures. Corrigez une catégorie directement dans la liste : le moteur s'en souviendra pour les prochains libellés identiques.</p>
+    </div>
+    <div class="actions">
+      <button class="btn" type="button" (click)="importing.set(true)"><app-icon name="upload" size="16" /> Importer un CSV</button>
+      <button class="btn" type="button" (click)="export()"><app-icon name="download" size="16" /> Exporter</button>
+      <button class="btn primary" type="button" (click)="creating.set(true)"><app-icon name="plus" size="16" /> Nouvelle opération</button>
+    </div>
+  </div>
+
+  <section class="sheet">
+    <div class="toolbar">
+      <div class="month-nav">
+        <button class="btn-icon" type="button" (click)="shift(-1)" aria-label="Mois précédent"><app-icon name="chevronLeft" /></button>
+        <strong class="month-title">{{ monthTitle() }}</strong>
+        <button class="btn-icon" type="button" (click)="shift(1)" aria-label="Mois suivant"><app-icon name="chevronRight" /></button>
+        @if (filters().month) { <button class="link" type="button" (click)="patch({ month: null })">Toutes les dates</button> }
+      </div>
+      <input class="grow" type="search" placeholder="Rechercher un libellé, une note…" [ngModel]="filters().search" (ngModelChange)="onSearch($event)" />
+      <select [ngModel]="filters().account_id" (ngModelChange)="patch({ account_id: $event })" aria-label="Compte">
+        <option [ngValue]="null">Tous les comptes</option>
+        @for (a of store.accounts(); track a.id) { <option [ngValue]="a.id">{{ a.name }}</option> }
+      </select>
+      <select [ngModel]="filters().category_id" (ngModelChange)="patch({ category_id: $event })" aria-label="Catégorie">
+        <option [ngValue]="null">Toutes catégories</option>
+        <option ngValue="none">Sans catégorie</option>
+        @for (c of store.categories(); track c.id) { <option [ngValue]="c.id">{{ c.name }}</option> }
+      </select>
+      <select [ngModel]="filters().type" (ngModelChange)="patch({ type: $event })" aria-label="Type">
+        <option value="">Tous types</option>
+        <option value="expense">Dépenses</option>
+        <option value="income">Revenus</option>
+        <option value="transfer">Virements</option>
+      </select>
+    </div>
+
+    @if (page(); as p) {
+      <div class="totals">
+        <div class="figure"><span class="label">Opérations</span><span class="value">{{ p.totals.count }}</span></div>
+        <div class="figure"><span class="label">Revenus</span><span class="value credit">{{ p.totals.income | money }}</span></div>
+        <div class="figure"><span class="label">Dépenses</span><span class="value debit">{{ p.totals.expense | money }}</span></div>
+        <div class="figure"><span class="label">Solde</span><span class="value" [class]="p.totals.net | sign">{{ p.totals.net | money: 'signed' }}</span></div>
+      </div>
+    }
+  </section>
+
+  @if (selected().size) {
+    <div class="bulk sheet">
+      <strong>{{ selected().size }} sélectionnée(s)</strong>
+      <select [(ngModel)]="bulkCategory" aria-label="Catégorie à appliquer">
+        <option [ngValue]="null">Choisir une catégorie…</option>
+        @for (c of store.categories(); track c.id) { <option [ngValue]="c.id">{{ c.name }}</option> }
+      </select>
+      <button class="btn" type="button" [disabled]="!bulkCategory" (click)="bulk('categorize')">Catégoriser</button>
+      <button class="btn danger" type="button" (click)="bulk('delete')">Supprimer</button>
+      <button class="link" type="button" (click)="clearSelection()">Annuler</button>
+    </div>
+  }
+
+  <section class="sheet ledger">
+    <div class="table-wrap">
+      <table class="ledger-table tx">
+        <thead>
+          <tr>
+            <th style="width: 28px"><input type="checkbox" [checked]="allSelected()" (change)="toggleAll()" aria-label="Tout sélectionner" /></th>
+            <th>Date</th>
+            <th>Libellé</th>
+            <th class="hide-md">Compte</th>
+            <th>Catégorie</th>
+            <th class="num">Montant</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (t of items(); track t.id) {
+            <tr [class.sel]="selected().has(t.id)">
+              <td><input type="checkbox" [checked]="selected().has(t.id)" (change)="toggle(t.id)" [attr.aria-label]="'Sélectionner ' + (t.description || 'opération')" /></td>
+              <td class="nowrap soft">{{ t.date | frDate }}</td>
+              <td class="desc">
+                <span class="ellipsis">{{ t.description || '—' }}</span>
+                @if (t.notes) { <span class="xs muted ellipsis">{{ t.notes }}</span> }
+              </td>
+              <td class="hide-md small soft nowrap">
+                {{ t.account?.name }}@if (t.type === 'transfer') { → {{ t.transfer_account?.name || accountName(t.transfer_account_id) }} }
+              </td>
+              <td>
+                @if (t.type === 'transfer') {
+                  <span class="tag"><app-icon name="swap" size="12" /> Virement</span>
+                } @else {
+                  <span class="cat-select">
+                    <span class="dot" [style.background]="t.category?.color || 'transparent'" [style.border]="t.category ? '0' : '1px dashed var(--ink-3)'"></span>
+                    <select [ngModel]="t.category_id" (ngModelChange)="recategorize(t, $event)" [attr.aria-label]="'Catégorie de ' + (t.description || 'opération')">
+                      <option [ngValue]="null">À classer</option>
+                      @for (c of categoriesFor(t); track c.id) { <option [ngValue]="c.id">{{ c.name }}</option> }
+                    </select>
+                  </span>
+                }
+              </td>
+              <td class="num" [class.credit]="t.type === 'income'" [class.soft]="t.type === 'transfer'">{{ t.type === 'expense' ? '−' : t.type === 'income' ? '+' : '' }}{{ t.amount | money }}</td>
+              <td class="row-actions"><button class="btn-icon" type="button" (click)="editing.set(t)" aria-label="Modifier"><app-icon name="edit" size="16" /></button></td>
+            </tr>
+          } @empty {
+            <tr><td colspan="7"><div class="empty">@if (loading()) { Chargement… } @else { Aucune opération pour ces filtres. }</div></td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (page(); as p) {
+      @if (p.current_page < p.last_page) {
+        <div class="more"><button class="btn" type="button" (click)="more()">Afficher plus ({{ items().length }} / {{ p.total }})</button></div>
+      }
+    }
+  </section>
+</div>
+
+<app-modal [open]="creating() || !!editing()" [title]="editing() ? 'Modifier l’opération' : 'Nouvelle opération'" (closed)="creating.set(false); editing.set(null)">
+  @if (creating() || editing()) {
+    <app-transaction-form [transaction]="editing()" (saved)="creating.set(false); editing.set(null)" (closed)="creating.set(false); editing.set(null)" />
+  }
+</app-modal>
+
+<app-modal [open]="importing()" title="Importer un relevé bancaire" [wide]="true" (closed)="importing.set(false)">
+  @if (importing()) { <app-import (closed)="importing.set(false)" (done)="importing.set(false)" /> }
+</app-modal>

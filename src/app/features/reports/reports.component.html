@@ -1,0 +1,191 @@
+<div class="page report">
+  <div class="page-head">
+    <div>
+      <h1>Bilans</h1>
+      <p>Le relevé de fin de période : ce qui est entré, ce qui est sorti, ce qui a été mis de côté et comment le patrimoine a évolué.</p>
+    </div>
+    <div class="actions no-print">
+      <div class="segmented">
+        <button type="button" [class.on]="mode() === 'month'" (click)="mode.set('month')">Mensuel</button>
+        <button type="button" [class.on]="mode() === 'year'" (click)="mode.set('year')">Annuel</button>
+      </div>
+      <div class="period">
+        <button class="btn-icon" type="button" (click)="shift(-1)" aria-label="Période précédente"><app-icon name="chevronLeft" /></button>
+        <strong class="cap">{{ mode() === 'month' ? monthName(month()) : year() }}</strong>
+        <button class="btn-icon" type="button" (click)="shift(1)" aria-label="Période suivante"><app-icon name="chevronRight" /></button>
+      </div>
+      <button class="btn" type="button" (click)="print()"><app-icon name="download" size="16" /> PDF</button>
+    </div>
+  </div>
+
+  @if (mode() === 'month') {
+    @if (monthly(); as r) {
+      <section class="grid g-main">
+        <article class="sheet ledger">
+          <div class="sheet-head"><h2>{{ r.label }}</h2>@if (r.is_current) { <span class="tag warn">mois en cours</span> }</div>
+          <table class="ledger-table statement">
+            <thead><tr><th></th><th class="num">Ce mois</th><th class="num">Mois préc.</th><th class="num hide-sm">Moy. 3 mois</th></tr></thead>
+            <tbody>
+              <tr><td>Revenus</td><td class="num credit">{{ r.summary.income | money }}</td><td class="num soft">{{ r.previous.income | money }}</td><td class="num soft hide-sm">{{ r.average_3m.income | money }}</td></tr>
+              <tr><td>Dépenses</td><td class="num debit">−{{ r.summary.expense | money }}</td><td class="num soft">−{{ r.previous.expense | money }}</td><td class="num soft hide-sm">−{{ r.average_3m.expense | money }}</td></tr>
+              <tr class="sub"><td>&nbsp;&nbsp;dont essentielles</td><td class="num soft">{{ r.summary.essential | money }}</td><td class="num soft">{{ r.previous.essential | money }}</td><td class="hide-sm"></td></tr>
+              <tr class="sub"><td>&nbsp;&nbsp;dont plaisir</td><td class="num soft">{{ r.summary.discretionary | money }}</td><td class="num soft">{{ r.previous.discretionary | money }}</td><td class="hide-sm"></td></tr>
+            </tbody>
+            <tfoot>
+              <tr class="balance"><td>Épargne du mois</td><td class="num" [class]="r.summary.savings | sign">{{ r.summary.savings | money: 'signed' }}</td><td class="num soft">{{ r.previous.savings | money: 'signed' }}</td><td class="hide-sm"></td></tr>
+            </tfoot>
+          </table>
+          <div class="rate-line">
+            <div class="figure"><span class="label">Taux d'épargne</span><span class="value big"><span class="marker">{{ r.summary.savings_rate | pct }}</span></span><span class="sub">objectif {{ r.savings_rate_target }} % · mois précédent {{ r.previous.savings_rate | pct }}</span></div>
+            <div class="figure"><span class="label">Versé en placements</span><span class="value">{{ r.summary.invested | money: 'round' }}</span></div>
+            <div class="figure"><span class="label">Revenus passifs</span><span class="value">{{ r.portfolio_income | money }}</span></div>
+          </div>
+        </article>
+
+        <article class="sheet">
+          <div class="sheet-head"><h3>Constats</h3></div>
+          <div class="insights">
+            @for (i of r.insights; track $index) { <div class="notice" [class]="i.level">{{ i.text }}</div> }
+          </div>
+          <h3 class="mt">Répartition 50 / 30 / 20</h3>
+          <p class="xs muted">Part des revenus : besoins essentiels, envies, épargne.</p>
+          <div class="split">
+            <span class="needs" [style.flex-grow]="r.rule_50_30_20.needs > 0 ? r.rule_50_30_20.needs : 0.01"></span>
+            <span class="wants" [style.flex-grow]="r.rule_50_30_20.wants > 0 ? r.rule_50_30_20.wants : 0.01"></span>
+            <span class="save" [style.flex-grow]="r.rule_50_30_20.savings > 0 ? r.rule_50_30_20.savings : 0.01"></span>
+          </div>
+          <div class="split-legend small">
+            <span><span class="dot needs"></span> Besoins <b class="num">{{ r.rule_50_30_20.needs | pct: false : 0 }}</b> <span class="muted">/ 50</span></span>
+            <span><span class="dot wants"></span> Envies <b class="num">{{ r.rule_50_30_20.wants | pct: false : 0 }}</b> <span class="muted">/ 30</span></span>
+            <span><span class="dot save"></span> Épargne <b class="num">{{ r.rule_50_30_20.savings | pct: false : 0 }}</b> <span class="muted">/ 20</span></span>
+          </div>
+        </article>
+      </section>
+
+      <section class="grid g-2">
+        <article class="sheet">
+          <div class="sheet-head"><h3>Pont patrimonial</h3><span class="num" [class]="r.net_worth.change | sign">{{ r.net_worth.change | money: 'signed-round' }} ({{ r.net_worth.change_pct | pct: true }})</span></div>
+          <div class="bridge">
+            @for (b of bridge(); track b.label) {
+              <div class="bridge-row">
+                <span class="small">{{ b.label }}</span>
+                <div class="bridge-bar"><span [class]="b.kind" [style.width.%]="b.width < 1 ? 1 : b.width"></span></div>
+                <span class="num small" [class.credit]="b.kind === 'up'" [class.debit]="b.kind === 'down'">{{ b.kind === 'base' ? (b.value | money: 'round') : (b.value | money: 'signed-round') }}</span>
+              </div>
+            }
+          </div>
+        </article>
+        <article class="sheet">
+          <div class="sheet-head"><h3>Rythme des dépenses</h3><span class="xs muted">cumul journalier</span></div>
+          @if (curveChart(); as cfg) { <app-chart [config]="cfg" [height]="200" label="Dépenses cumulées par jour" /> }
+        </article>
+      </section>
+
+      <section class="grid g-main">
+        <article class="sheet ledger">
+          <div class="sheet-head"><h3>Dépenses par catégorie</h3><a routerLink="/transactions">Opérations</a></div>
+          <div class="table-wrap">
+            <table class="ledger-table">
+              <thead><tr><th>Catégorie</th><th class="hide-sm" style="width: 30%"></th><th class="num">Montant</th><th class="num">Part</th><th class="num">vs moy. 3 mois</th></tr></thead>
+              <tbody>
+                @for (c of r.expenses_by_category; track c.name) {
+                  <tr>
+                    <td><span class="cat"><span class="dot" [style.background]="c.color"></span>{{ c.name }}</span></td>
+                    <td class="hide-sm"><div class="hbar"><span [style.width.%]="(c.amount / maxCategory()) * 100" [style.background]="c.color"></span></div></td>
+                    <td class="num">{{ c.amount | money }}</td>
+                    <td class="num soft">{{ c.share | pct: false : 0 }}</td>
+                    <td class="num">
+                      @if (c.delta_pct === null || c.delta_pct === undefined) { <span class="muted">—</span> }
+                      @else { <span class="tag" [class.bad]="c.delta_pct > 15" [class.good]="c.delta_pct < -15">{{ c.delta_pct | pct: true : 0 }}</span> }
+                    </td>
+                  </tr>
+                } @empty { <tr><td colspan="5"><div class="empty">Aucune dépense.</div></td></tr> }
+              </tbody>
+              @if (r.expenses_by_category.length) {
+                <tfoot><tr><td>Total</td><td class="hide-sm"></td><td class="num">{{ r.summary.expense | money }}</td><td></td><td></td></tr></tfoot>
+              }
+            </table>
+          </div>
+        </article>
+
+        <div class="grid">
+          <article class="sheet">
+            <div class="sheet-head"><h3>Budgets</h3><a routerLink="/budgets">Gérer</a></div>
+            @for (b of r.budgets; track b.id) {
+              <div class="bud">
+                <div class="bud-line small"><span>{{ b.name }}</span><span class="num">{{ b.spent | money: 'round' }} / {{ b.limit | money: 'round' }}</span></div>
+                <div class="gauge" [class]="b.status"><span [style.width.%]="b.percent > 100 ? 100 : b.percent"></span></div>
+              </div>
+            } @empty { <p class="empty">Aucun budget.</p> }
+          </article>
+          <article class="sheet">
+            <div class="sheet-head"><h3>Plus grosses dépenses</h3></div>
+            <div class="list">
+              @for (t of r.top_expenses; track t.id) {
+                <div class="list-item small"><span class="muted num">{{ t.date | frDate: 'day' }}</span><span class="grow ellipsis">{{ t.description }}</span><span class="num">{{ t.amount | money }}</span></div>
+              } @empty { <p class="empty">—</p> }
+            </div>
+          </article>
+          <article class="sheet">
+            <div class="sheet-head"><h3>Revenus</h3></div>
+            <div class="list">
+              @for (c of r.income_by_category; track c.name) {
+                <div class="list-item small"><span class="dot" [style.background]="c.color"></span><span class="grow">{{ c.name }}</span><span class="num credit">{{ c.amount | money }}</span></div>
+              } @empty { <p class="empty">Aucun revenu.</p> }
+            </div>
+          </article>
+        </div>
+      </section>
+    } @else {
+      <div class="sheet skeleton" style="height: 300px"></div>
+    }
+  } @else {
+    @if (yearly(); as y) {
+      <section class="sheet kpis-year">
+        <div class="figure"><span class="label">Revenus</span><span class="value credit">{{ y.totals.income | money: 'round' }}</span><span class="sub">{{ y.totals.avg_monthly_income | money: 'round' }} / mois</span></div>
+        <div class="figure"><span class="label">Dépenses</span><span class="value debit">{{ y.totals.expense | money: 'round' }}</span><span class="sub">{{ y.totals.avg_monthly_expense | money: 'round' }} / mois</span></div>
+        <div class="figure"><span class="label">Épargne</span><span class="value">{{ y.totals.savings | money: 'round' }}</span></div>
+        <div class="figure"><span class="label">Taux d'épargne</span><span class="value big"><span class="marker">{{ y.totals.savings_rate | pct }}</span></span></div>
+        <div class="figure"><span class="label">Investi</span><span class="value">{{ y.totals.invested | money: 'round' }}</span></div>
+        <div class="figure"><span class="label">Patrimoine</span><span class="value" [class]="y.net_worth.change | sign">{{ y.net_worth.change | money: 'signed-round' }}</span><span class="sub">{{ y.net_worth.start | money: 'round' }} → {{ y.net_worth.end | money: 'round' }}</span></div>
+      </section>
+      <section class="grid g-2">
+        <article class="sheet"><div class="sheet-head"><h3>Revenus et dépenses</h3></div>@if (yearChart(); as cfg) { <app-chart [config]="cfg" [height]="240" label="Revenus et dépenses de l'année" /> }</article>
+        <article class="sheet"><div class="sheet-head"><h3>Patrimoine net</h3></div>@if (yearNwChart(); as cfg) { <app-chart [config]="cfg" [height]="240" label="Patrimoine net de l'année" /> }</article>
+      </section>
+      <section class="grid g-main">
+        <article class="sheet ledger">
+          <div class="sheet-head"><h3>Mois par mois</h3></div>
+          <div class="table-wrap">
+            <table class="ledger-table">
+              <thead><tr><th>Mois</th><th class="num">Revenus</th><th class="num">Dépenses</th><th class="num">Épargne</th><th class="num">Taux</th><th class="num hide-sm">Patrimoine</th></tr></thead>
+              <tbody>
+                @for (m of y.months; track m.month) {
+                  <tr [class.muted]="m.net_worth === null">
+                    <td class="cap"><button class="link" type="button" (click)="month.set(m.month); mode.set('month')">{{ monthName(m.month) }}</button></td>
+                    <td class="num credit">{{ m.income | money: 'round' }}</td>
+                    <td class="num debit">{{ m.expense | money: 'round' }}</td>
+                    <td class="num" [class]="m.savings | sign">{{ m.savings | money: 'signed-round' }}</td>
+                    <td class="num">{{ m.savings_rate | pct: false : 0 }}</td>
+                    <td class="num soft hide-sm">{{ m.net_worth === null ? '' : (m.net_worth | money: 'round') }}</td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot><tr><td>Total</td><td class="num">{{ y.totals.income | money: 'round' }}</td><td class="num">{{ y.totals.expense | money: 'round' }}</td><td class="num">{{ y.totals.savings | money: 'signed-round' }}</td><td class="num">{{ y.totals.savings_rate | pct: false : 0 }}</td><td class="hide-sm"></td></tr></tfoot>
+            </table>
+          </div>
+        </article>
+        <article class="sheet">
+          <div class="sheet-head"><h3>Où va l'argent</h3></div>
+          <div class="legend">
+            @for (c of y.expenses_by_category; track c.name) {
+              <div class="legend-row"><span class="dot" [style.background]="c.color"></span><span class="ellipsis">{{ c.name }}</span><span class="num soft">{{ c.share | pct: false : 0 }}</span><span class="num">{{ c.amount | money: 'round' }}</span></div>
+            }
+          </div>
+        </article>
+      </section>
+    } @else {
+      <div class="sheet skeleton" style="height: 300px"></div>
+    }
+  }
+</div>

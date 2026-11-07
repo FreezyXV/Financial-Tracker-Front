@@ -1,12 +1,19 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { ToastService } from './core/toast.service';
 
 @Component({
   selector: 'app-root',
   imports: [RouterOutlet],
-  templateUrl: './app.component.html',
-  styleUrl: './app.component.scss'
+  template: `
+    <router-outlet />
+    <div class="toasts" aria-live="polite">
+      @for (t of toast.toasts(); track t.id) {
+        <div class="toast" [class.error]="t.kind === 'error'">{{ t.text }}</div>
+      }
+    </div>
+  `,
 })
 export class AppComponent {
-  title = 'FRONT';
+  toast = inject(ToastService);
 }

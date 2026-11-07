@@ -1,0 +1,18 @@
+.month-nav { display: flex; align-items: center; gap: 4px; }
+.month-title { min-width: 150px; text-align: center; text-transform: capitalize; font-size: var(--fs-md); }
+.totals { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-4); margin-top: var(--sp-4); padding-top: var(--sp-3); border-top: 1px solid var(--rule); }
+.totals .value { font-size: var(--fs-lg); }
+.bulk { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; position: sticky; top: 60px; z-index: 5; padding: 10px 16px; }
+.bulk select { width: auto; }
+.desc { max-width: 340px; }
+.desc span { display: block; }
+.cat-select { display: inline-flex; align-items: center; gap: 6px; }
+.cat-select select { border: 1px solid transparent; background: transparent; padding: 3px 4px; font-size: var(--fs-sm); max-width: 190px; color: var(--ink); cursor: pointer; }
+.cat-select select:hover { border-color: var(--rule-strong); }
+tr.sel { background: color-mix(in srgb, var(--marker) 14%, transparent); }
+.more { display: flex; justify-content: center; padding-top: var(--sp-3); }
+@media (max-width: 760px) {
+  .hide-md { display: none; }
+  .totals { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .desc { max-width: 160px; }
+}

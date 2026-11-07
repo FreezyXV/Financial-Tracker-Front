@@ -1,59 +1,37 @@
-# FRONT
+# Registre — Front (Angular 19)
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.12.
+Interface du gestionnaire de finances personnelles **Registre**. API : [Financial-Tracker-Back](https://github.com/FreezyXV/Financial-Tracker-Back).
 
-## Development server
+## Fonctionnalités
 
-To start a local development server, run:
+| Module | Contenu |
+|---|---|
+| Synthèse | Patrimoine net et historique 12 mois, variation 30 j / depuis janvier, cashflow, répartition, budgets, échéances, objectifs, épargne de précaution en mois |
+| Opérations | Filtres (mois, compte, catégorie, type, recherche), recatégorisation dans la liste, actions groupées, **import CSV bancaire** (débit/crédit ou montant signé, formats FR, dédoublonnage), export CSV |
+| Comptes | Courant, Livret A, LDDS, LEP, PEL, PEA, PEA-PME, CTO, assurance-vie, PER, crypto, immobilier, crédits ; plafonds réglementaires ; date d'avantage fiscal (PEA 5 ans, AV 8 ans) |
+| Budgets | Enveloppes mensuelles, report du reliquat, seuil d'alerte, projection de fin de mois, suggestions basées sur la moyenne 3 mois |
+| Placements | Positions au PRU, plus-values latentes et réalisées, dividendes, frais, **TRI annualisé**, diversification (classe, zone, secteur), cours Yahoo/CoinGecko, recherche d'instruments, contrôle d'éligibilité PEA, actifs en devises |
+| Bilans | Mensuel : relevé, taux d'épargne, constats automatiques, 50/30/20, pont patrimonial (épargne vs marchés), rythme des dépenses ; annuel ; export PDF |
+| Objectifs | Suivi manuel ou lié à un compte, effort mensuel, avec ou sans rendement |
+| Échéances | Abonnements, salaires, virements programmés, passage automatique, **détection des prélèvements récurrents** |
+| Projection | Simulateur FIRE (inflation, hausse de l'épargne, taux de retrait), scénarios 4/6/8 %, gain de +100 €/mois |
+| Réglages | Profil, objectif d'épargne, seuil d'alerte, catégories (essentielles, sous-catégories), règles de classement |
 
-```bash
-ng serve
-```
+Thème clair/sombre, responsive mobile (navigation basse), alertes in-app.
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
+## Démarrage
 
 ```bash
-ng build
+npm ci
+npm start          # http://localhost:4200 (API attendue sur http://127.0.0.1:8000/api)
+npm run build      # production (src/environments/environment.prod.ts → apiUrl)
+npm run test:ci    # tests unitaires (CSV, projection) en Chrome headless
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Compte de démo (après `php artisan migrate:fresh --seed` côté API) : `demo@finance.test` / `password`.
 
-## Running unit tests
+## Structure
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+`src/app/core` (API, auth par token, store, modèles, libellés métier) · `src/app/shared` (graphiques Chart.js, formatage FR, parseur CSV, calculs de projection) · `src/app/features/*` (une page par module, chargée à la demande) · `src/styles.scss` (système visuel « Registre »).
 
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Feuille de route : [ROADMAP.md](ROADMAP.md).

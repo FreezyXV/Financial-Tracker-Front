@@ -1,0 +1,18 @@
+.nw { display: grid; gap: var(--sp-3); }
+.bars { display: flex; height: 10px; border-radius: 2px; overflow: hidden; gap: 2px; }
+.bars span { min-width: 3px; }
+.legend.inline { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4); }
+.legend.inline > span { display: inline-flex; align-items: center; gap: 6px; }
+.accounts { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--sp-3); }
+.acc { border: 1px solid var(--rule); border-radius: var(--r-sm); padding: var(--sp-3) var(--sp-4); display: grid; gap: 8px; background: var(--sheet); align-content: start; }
+.acc.archived { opacity: 0.55; }
+.acc-head { display: flex; gap: 10px; align-items: flex-start; }
+.acc-head .grow { flex: 1; min-width: 0; }
+.acc-head h4 { font-size: var(--fs-md); font-weight: 600; }
+.swatch { width: 4px; align-self: stretch; border-radius: 2px; }
+.acc-value { font-size: var(--fs-xl); font-weight: 500; }
+.acc-meta { display: flex; flex-wrap: wrap; gap: 4px 12px; color: var(--ink-2); }
+.ceil { display: grid; gap: 4px; }
+.swatches { display: flex; gap: 6px; flex-wrap: wrap; }
+.sw { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--sheet); outline: 1px solid var(--rule-strong); cursor: pointer; }
+.sw.on { outline: 2px solid var(--ink); }
