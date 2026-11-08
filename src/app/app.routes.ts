@@ -1,12 +1,13 @@
 import { Routes } from '@angular/router';
-import { authGuard, guestGuard } from './core/auth.guard';
+import { authGuard, guestGuard, onboardedGuard } from './core/auth.guard';
 
 export const routes: Routes = [
   { path: 'login', canActivate: [guestGuard], loadComponent: () => import('./features/auth/login/login.component').then((m) => m.LoginComponent), title: 'Connexion — Registre' },
   { path: 'register', canActivate: [guestGuard], loadComponent: () => import('./features/auth/register/register.component').then((m) => m.RegisterComponent), title: 'Créer un compte — Registre' },
+  { path: 'onboarding', canActivate: [authGuard], loadComponent: () => import('./features/onboarding/onboarding.component').then((m) => m.OnboardingComponent), title: 'Bienvenue — Registre' },
   {
     path: '',
-    canActivate: [authGuard],
+    canActivate: [authGuard, onboardedGuard],
     loadComponent: () => import('./layout/shell.component').then((m) => m.ShellComponent),
     children: [
       { path: '', pathMatch: 'full', loadComponent: () => import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent), title: 'Synthèse — Registre' },

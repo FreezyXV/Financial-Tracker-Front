@@ -1,8 +1,8 @@
 <div class="page">
   <div class="page-head">
     <div>
-      <h1>Synthèse</h1>
-      <p>Patrimoine net, trésorerie du mois et prochaines échéances.</p>
+      <h1>{{ greeting() }}</h1>
+      <p>Patrimoine net, trésorerie du mois, prochaines échéances et vos priorités du moment.</p>
     </div>
     <div class="actions">
       <a class="btn" routerLink="/reports"><app-icon name="report" size="16" /> Bilan du mois</a>
@@ -18,6 +18,21 @@
       <a class="notice warning" routerLink="/transactions" [queryParams]="{ category_id: 'none' }">
         <app-icon name="info" size="16" /> {{ d.uncategorized }} opération(s) sans catégorie faussent vos bilans. Les classer →
       </a>
+    }
+
+    @if (d.recommendations.length) {
+      <section class="sheet ledger plan">
+        <div class="sheet-head"><h3>Votre plan d'action</h3><span class="xs muted">Calculé à partir de votre profil et de vos chiffres réels</span></div>
+        <ol class="plan-list">
+          @for (r of d.recommendations; track r.id; let i = $index) {
+            <li [attr.data-level]="r.level">
+              <span class="num rank">{{ i + 1 }}</span>
+              <div class="grow"><strong>{{ r.title }}</strong><p class="small soft">{{ r.text }}</p></div>
+              @if (r.action) { <button class="btn" type="button" (click)="go(r.action.route)">{{ r.action.label }}</button> }
+            </li>
+          }
+        </ol>
+      </section>
     }
 
     <section class="grid g-main">
@@ -44,7 +59,7 @@
         <div class="sheet-head"><h3>Ce mois-ci</h3><a routerLink="/reports">Détail</a></div>
         <dl class="statement">
           <div><dt>Revenus</dt><dd class="num credit">{{ d.month.income | money }}</dd></div>
-          <div><dt>Dépenses</dt><dd class="num debit">−{{ d.month.expense | money }}</dd></div>
+          <div><dt>Dépenses</dt><dd class="num" [class.debit]="d.month.expense > 0">{{ d.month.expense > 0 ? '−' : '' }}{{ d.month.expense | money }}</dd></div>
           <div class="total"><dt>Solde du mois</dt><dd class="num" [class]="d.month.savings | sign">{{ d.month.savings | money: 'signed' }}</dd></div>
           <div><dt>Versé en placements</dt><dd class="num">{{ d.month.invested | money }}</dd></div>
         </dl>

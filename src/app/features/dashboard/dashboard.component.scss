@@ -16,3 +16,11 @@
 .date-chip { font-size: var(--fs-xs); color: var(--ink-2); width: 52px; flex-shrink: 0; }
 .tight { gap: var(--sp-4) var(--sp-3); }
 a.notice { text-decoration: none; color: var(--ink); }
+.plan-list { list-style: none; margin: 0; padding: 0; display: grid; }
+.plan-list li { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--rule); }
+.plan-list li:last-child { border-bottom: 0; }
+.plan-list .rank { color: var(--ink-3); font-size: var(--fs-lg); }
+.plan-list li[data-level='danger'] .rank { color: var(--debit); }
+.plan-list li[data-level='warning'] .rank { color: var(--warn); }
+.plan-list p { margin-top: 2px; max-width: 90ch; }
+@media (max-width: 640px) { .plan-list li { grid-template-columns: 22px minmax(0, 1fr); } .plan-list li .btn { grid-column: 2; justify-self: start; } }

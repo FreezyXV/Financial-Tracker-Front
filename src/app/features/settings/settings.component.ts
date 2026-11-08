@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { PALETTE } from '../../core/labels';
@@ -20,11 +21,19 @@ interface CatDraft {
 
 @Component({
   selector: 'app-settings',
-  imports: [FormsModule, IconComponent, ModalComponent],
+  imports: [FormsModule, RouterLink, IconComponent, ModalComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page">
       <div class="page-head"><div><h1>Réglages</h1><p>Profil, objectifs d'épargne, catégories et règles de classement automatique.</p></div></div>
+
+      <section class="sheet profile-card">
+        <div>
+          <h3>Profil financier</h3>
+          <p class="small soft">{{ profileSummary() }}</p>
+        </div>
+        <a class="btn" routerLink="/onboarding">{{ hasProfile() ? 'Mettre à jour mes réponses' : 'Répondre au questionnaire' }}</a>
+      </section>
 
       <section class="grid g-2">
         <article class="sheet">
@@ -124,7 +133,8 @@ interface CatDraft {
       }
     </app-modal>
   `,
-  styles: [`.grp{font-size:var(--fs-xs);color:var(--ink-3);font-weight:500;margin:var(--sp-3) 0 0}
+  styles: [`.profile-card{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+    .grp{font-size:var(--fs-xs);color:var(--ink-3);font-weight:500;margin:var(--sp-3) 0 0}
     .rule-new{display:grid;grid-template-columns:1fr 160px auto;gap:6px;margin:var(--sp-3) 0}
     @media(max-width:560px){.rule-new{grid-template-columns:1fr}}
     code{font-family:var(--mono);word-break:break-word}
@@ -142,6 +152,26 @@ export class SettingsComponent implements OnInit {
   rules = signal<Rule[]>([]);
   newRule: { pattern: string; category_id: number | null } = { pattern: '', category_id: null };
   cat = signal<CatDraft | null>(null);
+
+  hasProfile = computed(() => !!this.auth.user()?.profile && !this.auth.user()?.profile?.skipped);
+  profileSummary = computed(() => {
+    const p = this.auth.user()?.profile;
+    if (!p || p.skipped) return 'Non renseigné : les conseils et budgets ne sont pas encore adaptés à votre situation.';
+    const labels: Record<string, string> = {
+      cdi: 'CDI', cdd: 'CDD', freelance: 'Indépendant', business_owner: 'Dirigeant', civil_servant: 'Fonctionnaire',
+      student: 'Étudiant', unemployed: 'En recherche', retired: 'Retraité', prudent: 'prudent', balanced: 'équilibré', dynamic: 'dynamique',
+      tenant: 'locataire', owner_mortgage: 'propriétaire avec crédit', owner: 'propriétaire', hosted: 'hébergé',
+    };
+    const parts = [
+      p.birth_year ? `${new Date().getFullYear() - p.birth_year} ans` : null,
+      p.employment ? labels[p.employment] : null,
+      p.housing ? labels[p.housing] : null,
+      p.monthly_income ? `${Math.round(p.monthly_income).toLocaleString('fr-FR')} €/mois` : null,
+      p.risk ? `profil ${labels[p.risk]}` : null,
+      p.goals?.length ? `${p.goals.length} objectif(s)` : null,
+    ];
+    return parts.filter(Boolean).join(' · ');
+  });
 
   catGroups = computed(() => {
     const all = this.store.categories();

@@ -1,5 +1,34 @@
 export type TxType = 'income' | 'expense' | 'transfer';
 
+export interface FinancialProfile {
+  birth_year?: number | null;
+  country?: 'FR' | 'LU' | 'BE' | 'CH' | 'DE' | 'other';
+  household?: 'single' | 'couple' | 'family';
+  children?: number;
+  has_pets?: boolean;
+  employment?: 'cdi' | 'cdd' | 'freelance' | 'business_owner' | 'civil_servant' | 'student' | 'unemployed' | 'retired';
+  housing?: 'tenant' | 'owner_mortgage' | 'owner' | 'hosted';
+  monthly_income?: number | null;
+  income_variable?: boolean;
+  payday?: number | null;
+  housing_cost?: number | null;
+  other_fixed_costs?: number | null;
+  variable_spending?: number | null;
+  goals?: string[];
+  home_amount?: number | null;
+  home_date?: string | null;
+  project_name?: string | null;
+  project_amount?: number | null;
+  project_date?: string | null;
+  expat_date?: string | null;
+  experience?: 'none' | 'beginner' | 'intermediate' | 'advanced';
+  risk?: 'prudent' | 'balanced' | 'dynamic';
+  horizon?: 'short' | 'medium' | 'long';
+  monthly_invest?: number | null;
+  budget_method?: '50_30_20' | 'envelopes' | 'none';
+  skipped?: boolean;
+}
+
 export interface User {
   id: number;
   name: string;
@@ -7,6 +36,17 @@ export interface User {
   currency: string;
   savings_rate_target: number;
   large_transaction_threshold: number;
+  profile: FinancialProfile | null;
+  onboarded_at: string | null;
+}
+
+export interface Recommendation {
+  id: string;
+  priority: number;
+  level: 'info' | 'warning' | 'danger';
+  title: string;
+  text: string;
+  action: { label: string; route: string } | null;
 }
 
 export interface Category {
@@ -271,6 +311,7 @@ export interface Dashboard {
     liquid_savings: number;
     savings_rate_target: number;
   };
+  recommendations: Recommendation[];
   unread_alerts: number;
   uncategorized: number;
 }

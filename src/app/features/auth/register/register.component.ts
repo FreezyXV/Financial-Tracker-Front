@@ -32,7 +32,7 @@ export class RegisterComponent {
     this.auth.register({ name: this.name, email: this.email, password: this.password, password_confirmation: this.password_confirmation }).subscribe({
       next: () => {
         this.store.load(true);
-        this.router.navigate(['/accounts'], { queryParams: { onboarding: 1 } });
+        this.router.navigate(['/onboarding']);
       },
       error: (e) => {
         this.busy.set(false);

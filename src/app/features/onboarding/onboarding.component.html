@@ -1,0 +1,292 @@
+<div class="ob">
+  <header class="ob-top">
+    <span class="brand"><span class="brand-mark" aria-hidden="true"></span> Registre</span>
+    @if (!created()) {
+      <div class="steps" aria-label="Progression">
+        <span class="small soft">Étape {{ step() + 1 }} sur {{ steps.length }} · <strong>{{ steps[step()] }}</strong></span>
+        <div class="track"><span [style.width.%]="progress()"></span></div>
+      </div>
+      <button class="link" type="button" (click)="rerun() ? go('/settings') : skip()">{{ rerun() ? 'Annuler' : 'Passer pour l’instant' }}</button>
+    }
+  </header>
+
+  @if (created(); as c) {
+    <main class="done">
+      <h1>Votre registre est prêt{{ firstName() ? ', ' + firstName() : '' }}.</h1>
+      <p class="soft">Voici ce qui a été préparé à partir de vos réponses. Tout reste modifiable.</p>
+      <div class="done-grid">
+        <div class="figure"><span class="value">{{ c.accounts }}</span><span class="label">comptes ouverts dans le registre</span></div>
+        <div class="figure"><span class="value">{{ c.goals }}</span><span class="label">objectifs chiffrés</span></div>
+        <div class="figure"><span class="value">{{ c.budgets }}</span><span class="label">budgets calibrés sur vos revenus</span></div>
+        <div class="figure"><span class="value">{{ c.recurring }}</span><span class="label">échéances prévues</span></div>
+        <div class="figure"><span class="value">{{ c.categories }}</span><span class="label">catégories adaptées à votre situation</span></div>
+      </div>
+      @if (recommendations().length) {
+        <section class="sheet ledger plan">
+          <h2>Votre plan d'action</h2>
+          @for (r of recommendations(); track r.id; let i = $index) {
+            <div class="plan-row" [attr.data-level]="r.level">
+              <span class="num rank">{{ i + 1 }}</span>
+              <div><strong>{{ r.title }}</strong><p class="small soft">{{ r.text }}</p></div>
+            </div>
+          }
+        </section>
+      }
+      <div class="form-actions">
+        <button class="btn" type="button" (click)="go('/transactions')"><app-icon name="upload" size="16" /> Importer un relevé</button>
+        <button class="btn primary" type="button" (click)="go('/')">Ouvrir mon tableau de bord</button>
+      </div>
+    </main>
+  } @else {
+    <div class="ob-body">
+      <main class="ob-main">
+        @switch (step()) {
+          @case (0) {
+            <h1>{{ rerun() ? 'Mettons à jour votre profil' : 'Bienvenue' + (firstName() ? ', ' + firstName() : '') + '.' }}</h1>
+            <p class="lead">Quelques questions pour adapter vos catégories, budgets, objectifs et conseils à votre situation. Comptez 3 minutes ; rien n'est obligatoire.</p>
+            <div class="q">
+              <label class="q-label" for="by">Votre année de naissance</label>
+              <input id="by" class="short num" type="number" min="1920" [max]="2026" placeholder="1995" [ngModel]="p().birth_year" (ngModelChange)="set('birth_year', $event)" />
+              <small class="muted">Sert à l'horizon de placement et à la projection retraite.</small>
+            </div>
+            <div class="q">
+              <span class="q-label">Pays de résidence fiscale</span>
+              <div class="chips">
+                @for (c of countries; track c.value) { <button type="button" class="chip" [class.on]="p().country === c.value" [attr.aria-pressed]="p().country === c.value" (click)="set('country', c.value)">{{ c.label }}</button> }
+              </div>
+              @if (!isFrance()) { <small class="muted">Les enveloppes françaises (Livret A, PEA…) seront masquées et les conseils adaptés.</small> }
+            </div>
+            <div class="q">
+              <span class="q-label">Votre foyer</span>
+              <div class="cards three">
+                @for (c of households; track c.value) {
+                  <button type="button" class="card" [class.on]="p().household === c.value" [attr.aria-pressed]="p().household === c.value" (click)="set('household', c.value)"><strong>{{ c.label }}</strong><span>{{ c.hint }}</span></button>
+                }
+              </div>
+            </div>
+            <div class="q row2">
+              <div>
+                <span class="q-label">Enfants à charge</span>
+                <div class="stepper">
+                  <button type="button" class="btn-icon" (click)="set('children', (p().children ?? 0) > 0 ? (p().children ?? 0) - 1 : 0)" aria-label="Moins">−</button>
+                  <span class="num">{{ p().children ?? 0 }}</span>
+                  <button type="button" class="btn-icon" (click)="set('children', (p().children ?? 0) + 1)" aria-label="Plus">+</button>
+                </div>
+              </div>
+              <label class="check"><input type="checkbox" [ngModel]="p().has_pets" (ngModelChange)="set('has_pets', $event)" /> J'ai un animal de compagnie</label>
+            </div>
+          }
+
+          @case (1) {
+            <h1>Travail et logement</h1>
+            <p class="lead">Votre statut détermine la taille du coussin de sécurité conseillé et les catégories utiles (cotisations URSSAF pour un indépendant, crédit immobilier pour un propriétaire…).</p>
+            <div class="q">
+              <span class="q-label">Situation professionnelle</span>
+              <div class="cards two">
+                @for (c of employments; track c.value) {
+                  <button type="button" class="card" [class.on]="p().employment === c.value" [attr.aria-pressed]="p().employment === c.value" (click)="set('employment', c.value)"><strong>{{ c.label }}</strong>@if (c.hint) { <span>{{ c.hint }}</span> }</button>
+                }
+              </div>
+            </div>
+            <div class="q">
+              <span class="q-label">Logement</span>
+              <div class="cards two">
+                @for (c of housings; track c.value) {
+                  <button type="button" class="card" [class.on]="p().housing === c.value" [attr.aria-pressed]="p().housing === c.value" (click)="set('housing', c.value)"><strong>{{ c.label }}</strong>@if (c.hint) { <span>{{ c.hint }}</span> }</button>
+                }
+              </div>
+            </div>
+          }
+
+          @case (2) {
+            <h1>Votre budget mensuel</h1>
+            <p class="lead">Des ordres de grandeur suffisent : ils servent à calibrer vos budgets en attendant vos vraies opérations.</p>
+            <div class="money-grid">
+              <label class="field"><span>Revenus nets mensuels {{ p().household === 'single' ? '' : 'du foyer' }}</span>
+                <div class="eur"><input type="number" min="0" step="50" class="num" [ngModel]="p().monthly_income" (ngModelChange)="set('monthly_income', $event)" placeholder="2 800" /></div>
+              </label>
+              <label class="field"><span>Jour de versement</span>
+                <input type="number" min="1" max="31" class="num" [ngModel]="p().payday" (ngModelChange)="set('payday', $event)" />
+              </label>
+              <label class="check full"><input type="checkbox" [ngModel]="p().income_variable" (ngModelChange)="set('income_variable', $event)" /> Mes revenus varient d'un mois à l'autre (primes, missions, chiffre d'affaires)</label>
+              @if (p().housing === 'tenant' || p().housing === 'owner_mortgage') {
+                <label class="field"><span>{{ p().housing === 'tenant' ? 'Loyer charges comprises' : 'Mensualité du crédit immobilier' }}</span>
+                  <div class="eur"><input type="number" min="0" step="10" class="num" [ngModel]="p().housing_cost" (ngModelChange)="set('housing_cost', $event)" /></div>
+                </label>
+              }
+              <label class="field"><span>Autres charges fixes</span>
+                <div class="eur"><input type="number" min="0" step="10" class="num" [ngModel]="p().other_fixed_costs" (ngModelChange)="set('other_fixed_costs', $event)" placeholder="énergie, assurances, transport…" /></div>
+                <small>Énergie, assurances, téléphone, transport, abonnements</small>
+              </label>
+              <label class="field"><span>Dépenses courantes</span>
+                <div class="eur"><input type="number" min="0" step="10" class="num" [ngModel]="p().variable_spending" (ngModelChange)="set('variable_spending', $event)" /></div>
+                <small>Courses, sorties, shopping, loisirs</small>
+              </label>
+            </div>
+            @if (p().monthly_income) {
+              <div class="statement">
+                <div><span>Revenus</span><span class="num credit">{{ p().monthly_income | money: 'round' }}</span></div>
+                <div><span>Dépenses estimées</span><span class="num debit">−{{ fixedTotal() | money: 'round' }}</span></div>
+                <div class="total"><span>Capacité d'épargne</span><span class="num" [class]="remaining() | sign">{{ remaining() | money: 'signed-round' }}</span></div>
+                <p class="xs muted">soit {{ (p().monthly_income ? (remaining() / (p().monthly_income ?? 1)) * 100 : 0) | pct: false : 0 }} des revenus</p>
+              </div>
+            }
+          }
+
+          @case (3) {
+            <h1>Vos comptes</h1>
+            <p class="lead">Cochez ce que vous possédez et indiquez le solde du jour. Vous pourrez importer l'historique ensuite.</p>
+            <div class="acc-list">
+              @for (a of visibleAccounts(); track a.type) {
+                <div class="acc" [class.on]="a.selected">
+                  <button type="button" class="acc-toggle" (click)="toggleAccount(a.type)" [attr.aria-pressed]="a.selected" [disabled]="a.existing">
+                    <span class="box">@if (a.selected) { <app-icon name="check" size="14" /> }</span>
+                    <span class="grow"><strong>{{ label(a.type) }}</strong>@if (hint(a.type) && a.selected && !a.existing) { <span class="xs muted"> · {{ hint(a.type) }}</span> }</span>
+                    @if (a.existing) { <span class="tag good">déjà suivi</span> }
+                  </button>
+                  @if (a.selected && !a.existing) {
+                    <div class="acc-fields">
+                      <label class="field"><span>{{ a.type === 'loan' ? 'Capital restant dû' : a.type === 'real_estate' ? 'Valeur estimée' : 'Solde actuel' }}</span>
+                        <div class="eur"><input type="number" step="0.01" class="num" [ngModel]="a.balance" (ngModelChange)="patchAccount(a.type, { balance: $event })" /></div>
+                      </label>
+                      <label class="field"><span>Établissement</span><input [ngModel]="a.institution" (ngModelChange)="patchAccount(a.type, { institution: $event })" placeholder="Banque, courtier…" /></label>
+                      @if (needsYear(a.type)) {
+                        <label class="field"><span>Année d'ouverture</span><input type="number" class="num" min="1950" max="2026" [ngModel]="a.opened_year" (ngModelChange)="patchAccount(a.type, { opened_year: $event })" /><small>Compte pour l'avantage fiscal</small></label>
+                      }
+                      @if (a.type === 'loan') {
+                        <label class="field"><span>Taux (%)</span><input type="number" step="0.01" class="num" [ngModel]="a.interest_rate" (ngModelChange)="patchAccount(a.type, { interest_rate: $event })" /></label>
+                        <label class="field"><span>Nom</span><input [ngModel]="a.name" (ngModelChange)="patchAccount(a.type, { name: $event })" placeholder="Prêt auto, crédit conso…" /></label>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+
+          @case (4) {
+            <h1>Ce qui compte pour vous</h1>
+            <p class="lead">Choisissez autant d'objectifs que vous voulez : ils orientent le plan d'action et deviennent des objectifs chiffrés.</p>
+            <div class="cards two">
+              @for (g of goalChoices; track g.value) {
+                <button type="button" class="card" [class.on]="hasGoal(g.value)" [attr.aria-pressed]="hasGoal(g.value)" (click)="toggleGoal(g.value)"><strong>{{ g.label }}</strong>@if (g.hint) { <span>{{ g.hint }}</span> }</button>
+              }
+            </div>
+            @if (hasGoal('home')) {
+              <fieldset class="detail"><legend>Résidence principale</legend>
+                <label class="field"><span>Apport visé</span><div class="eur"><input type="number" min="0" step="1000" class="num" [ngModel]="p().home_amount" (ngModelChange)="set('home_amount', $event)" /></div></label>
+                <label class="field"><span>Pour quand ?</span><input type="date" [ngModel]="p().home_date" (ngModelChange)="set('home_date', $event)" /></label>
+              </fieldset>
+            }
+            @if (hasGoal('project')) {
+              <fieldset class="detail"><legend>Votre projet</legend>
+                <label class="field"><span>Nom</span><input [ngModel]="p().project_name" (ngModelChange)="set('project_name', $event)" placeholder="Voyage au Japon" /></label>
+                <label class="field"><span>Montant</span><div class="eur"><input type="number" min="0" step="100" class="num" [ngModel]="p().project_amount" (ngModelChange)="set('project_amount', $event)" /></div></label>
+                <label class="field"><span>Date</span><input type="date" [ngModel]="p().project_date" (ngModelChange)="set('project_date', $event)" /></label>
+              </fieldset>
+            }
+            @if (hasGoal('expat')) {
+              <fieldset class="detail"><legend>Départ à l'étranger</legend>
+                <label class="field"><span>Date envisagée</span><input type="date" [ngModel]="p().expat_date" (ngModelChange)="set('expat_date', $event)" /></label>
+              </fieldset>
+            }
+          }
+
+          @case (5) {
+            <h1>Votre rapport au risque</h1>
+            <p class="lead">Pas de bonne réponse : votre profil règle le rendement de la projection et la nature des alertes sur votre portefeuille.</p>
+            <div class="q">
+              <span class="q-label">Expérience des placements</span>
+              <div class="cards two">
+                @for (c of experiences; track c.value) {
+                  <button type="button" class="card" [class.on]="p().experience === c.value" [attr.aria-pressed]="p().experience === c.value" (click)="set('experience', c.value)"><strong>{{ c.label }}</strong><span>{{ c.hint }}</span></button>
+                }
+              </div>
+            </div>
+            <div class="q">
+              <span class="q-label">Si vos placements perdaient beaucoup en un mois…</span>
+              <div class="cards three">
+                @for (c of risks; track c.value) {
+                  <button type="button" class="card" [class.on]="p().risk === c.value" [attr.aria-pressed]="p().risk === c.value" (click)="set('risk', c.value)"><strong>{{ c.label }}</strong><span>{{ c.hint }}</span></button>
+                }
+              </div>
+            </div>
+            <div class="q">
+              <span class="q-label">Horizon de placement</span>
+              <div class="chips">
+                @for (c of horizons; track c.value) { <button type="button" class="chip" [class.on]="p().horizon === c.value" [attr.aria-pressed]="p().horizon === c.value" (click)="set('horizon', c.value)">{{ c.label }}</button> }
+              </div>
+            </div>
+            <div class="q row2">
+              <label class="field"><span>Montant à investir chaque mois</span><div class="eur"><input type="number" min="0" step="25" class="num" [ngModel]="p().monthly_invest" (ngModelChange)="set('monthly_invest', $event)" placeholder="0" /></div>
+                @if (remaining() > 0) { <small>Capacité d'épargne estimée : {{ remaining() | money: 'round' }}</small> }
+              </label>
+            </div>
+            <div class="q">
+              <span class="q-label">Méthode de budget</span>
+              <div class="cards three">
+                @for (c of budgetMethods; track c.value) {
+                  <button type="button" class="card" [class.on]="p().budget_method === c.value" [attr.aria-pressed]="p().budget_method === c.value" (click)="set('budget_method', c.value)"><strong>{{ c.label }}</strong><span>{{ c.hint }}</span></button>
+                }
+              </div>
+            </div>
+          }
+
+          @case (6) {
+            <h1>Ce que nous allons préparer</h1>
+            <p class="lead">Vérifiez avant de valider. Rien n'est définitif.</p>
+            <div class="recap">
+              <label class="check"><input type="checkbox" [ngModel]="options().create_goals" (ngModelChange)="setOption('create_goals', $event)" />
+                <span><strong>Objectifs chiffrés</strong><br /><span class="small soft">Épargne de sécurité de {{ preview()?.emergency_months ?? 3 }} mois ({{ preview()?.emergency_target ?? 0 | money: 'round' }})@if (hasGoal('home') && p().home_amount) {, apport de {{ p().home_amount | money: 'round' }}}@if (hasGoal('project') && p().project_amount) {, {{ p().project_name || 'projet' }} de {{ p().project_amount | money: 'round' }}}@if (hasGoal('expat')) {, fonds de départ à l'étranger}</span></span>
+              </label>
+              <label class="check"><input type="checkbox" [ngModel]="options().create_budgets" (ngModelChange)="setOption('create_budgets', $event)" [disabled]="!p().monthly_income || p().budget_method === 'none'" />
+                <span><strong>Budgets mensuels</strong><br /><span class="small soft">@if (p().monthly_income && p().budget_method !== 'none') { Courses, sorties, shopping, loisirs, transport, abonnements, voyages@if ((p().children ?? 0) > 0) {, enfants} : calibrés sur {{ p().monthly_income | money: 'round' }} de revenus } @else { Indiquez vos revenus à l'étape 3 pour les calibrer. }</span></span>
+              </label>
+              <label class="check"><input type="checkbox" [ngModel]="options().create_recurring" (ngModelChange)="setOption('create_recurring', $event)" />
+                <span><strong>Échéancier prévisionnel</strong><br /><span class="small soft">@if (!p().income_variable && p().monthly_income) { Salaire le {{ p().payday }} du mois · }@if (p().housing_cost) { {{ p().housing === 'tenant' ? 'loyer' : 'crédit immobilier' }} · }@if (p().monthly_invest) { investissement programmé de {{ p().monthly_invest | money: 'round' }} · }à valider à chaque échéance</span></span>
+              </label>
+              <div class="check static"><app-icon name="wallet" size="16" /><span><strong>{{ selectedAccounts().length }} compte(s)</strong><br /><span class="small soft">@for (a of selectedAccounts(); track a.type; let last = $last) { {{ label(a.type) }}{{ last ? '' : ', ' }} }</span></span></div>
+            </div>
+          }
+        }
+
+        <nav class="ob-nav">
+          @if (step() > 0) { <button class="btn" type="button" (click)="prev()"><app-icon name="chevronLeft" size="16" /> Retour</button> }
+          <span class="spacer"></span>
+          @if (step() < steps.length - 1) {
+            <button class="btn primary" type="button" (click)="next()">Continuer <app-icon name="chevronRight" size="16" /></button>
+          } @else {
+            <button class="btn primary" type="button" (click)="finish()" [disabled]="busy()">{{ busy() ? 'Préparation…' : rerun() ? 'Mettre à jour mon registre' : 'Créer mon registre' }}</button>
+          }
+        </nav>
+      </main>
+
+      <aside class="ob-card" aria-label="Votre fiche">
+        <div class="sheet ledger card-sheet">
+          <h3>Votre fiche</h3>
+          <dl>
+            <div><dt>Âge</dt><dd>{{ age() !== null ? age() + ' ans' : '—' }}</dd></div>
+            <div><dt>Résidence</dt><dd>{{ choiceLabel(countries, p().country) }}</dd></div>
+            <div><dt>Foyer</dt><dd>{{ choiceLabel(households, p().household) }}@if ((p().children ?? 0) > 0) { · {{ p().children }} enfant(s) }</dd></div>
+            <div><dt>Statut</dt><dd>{{ choiceLabel(employments, p().employment) }}</dd></div>
+            <div><dt>Logement</dt><dd>{{ choiceLabel(housings, p().housing) }}</dd></div>
+            <div><dt>Revenus</dt><dd class="num">{{ p().monthly_income ? (p().monthly_income | money: 'round') : '—' }}</dd></div>
+            <div><dt>Patrimoine déclaré</dt><dd class="num">{{ netWorth() | money: 'round' }}</dd></div>
+            <div><dt>Profil</dt><dd>{{ choiceLabel(risks, p().risk) }} · {{ choiceLabel(horizons, p().horizon) }}</dd></div>
+          </dl>
+          @if (preview(); as pv) {
+            <div class="derived double-rule">
+              <div class="figure"><span class="label">Coussin de sécurité conseillé</span><span class="value"><span class="marker">{{ pv.emergency_target | money: 'round' }}</span></span><span class="sub">{{ pv.emergency_months }} mois de dépenses</span></div>
+              @if (pv.tmi !== null && p().monthly_income) {
+                <div class="figure"><span class="label">Tranche d'imposition estimée</span><span class="value">{{ pv.tmi }} %</span><span class="sub">{{ pv.tax_parts }} part(s) fiscale(s), estimation</span></div>
+              }
+            </div>
+          }
+          @if ((p().goals ?? []).length) {
+            <p class="xs muted goals">Objectifs : {{ (p().goals ?? []).length }} sélectionné(s)</p>
+          }
+        </div>
+      </aside>
+    </div>
+  }
+</div>

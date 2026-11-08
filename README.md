@@ -6,6 +6,8 @@ Interface du gestionnaire de finances personnelles **Registre**. API : [Financia
 
 | Module | Contenu |
 |---|---|
+| Accueil personnalisé | Questionnaire en 7 étapes à l'inscription (âge, pays, foyer, statut pro, logement, revenus et charges, comptes détenus, objectifs, profil de risque, méthode de budget) avec fiche récapitulative en direct : crée comptes, catégories adaptées (URSSAF, enfants, crédit immo…), objectifs chiffrés, budgets calibrés et échéancier. Modifiable depuis Réglages |
+| Plan d'action | Recommandations classées, recalculées à partir du profil et des chiffres réels : coussin de sécurité, dettes chères, taux d'épargne, livrets pleins, PEA/AV/PER à ouvrir, TMI estimée, excédent de liquidités, concentration, expatriation, résidence luxembourgeoise |
 | Synthèse | Patrimoine net et historique 12 mois, variation 30 j / depuis janvier, cashflow, répartition, budgets, échéances, objectifs, épargne de précaution en mois |
 | Opérations | Filtres (mois, compte, catégorie, type, recherche), recatégorisation dans la liste, actions groupées, **import CSV bancaire** (débit/crédit ou montant signé, formats FR, dédoublonnage), export CSV |
 | Comptes | Courant, Livret A, LDDS, LEP, PEL, PEA, PEA-PME, CTO, assurance-vie, PER, crypto, immobilier, crédits ; plafonds réglementaires ; date d'avantage fiscal (PEA 5 ans, AV 8 ans) |

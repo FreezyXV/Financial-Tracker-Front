@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { AuthService } from '../../core/auth.service';
 import { ApiService } from '../../core/api.service';
 import { ASSET_CLASSES } from '../../core/labels';
 import { Dashboard } from '../../core/models';
@@ -20,7 +21,14 @@ import { PIPES } from '../../shared/pipes';
 export class DashboardComponent {
   private api = inject(ApiService);
   private store = inject(StoreService);
+  private router = inject(Router);
+  auth = inject(AuthService);
   data = signal<Dashboard | null>(null);
+  greeting = computed(() => {
+    const h = new Date().getHours();
+    const first = (this.auth.user()?.name ?? '').split(' ')[0];
+    return `${h < 5 || h >= 18 ? 'Bonsoir' : 'Bonjour'}${first ? ' ' + first : ''}`;
+  });
   error = signal(false);
 
   constructor() {
@@ -32,6 +40,11 @@ export class DashboardComponent {
 
   load(): void {
     this.api.get<Dashboard>('dashboard').subscribe({ next: (d) => this.data.set(d), error: () => this.error.set(true) });
+  }
+
+  go(route: string): void {
+    const [path, query] = route.split('?');
+    this.router.navigate([path], { queryParams: Object.fromEntries(new URLSearchParams(query ?? '')) });
   }
 
   historyChart = computed(() => {

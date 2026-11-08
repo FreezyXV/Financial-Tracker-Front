@@ -8,6 +8,10 @@ import { PIPES } from '../../shared/pipes';
 import { ProjectionInput, project } from '../../shared/projection';
 
 interface Defaults {
+  birth_year: number | null;
+  risk: 'prudent' | 'balanced' | 'dynamic' | null;
+  monthly_invest: number | null;
+  goals: string[];
   net_worth: number;
   invested: number;
   monthly_expense: number;
@@ -130,10 +134,16 @@ export class SimulatorComponent {
   reset(): void {
     const d = this.defaults();
     if (!d) return;
+    const ret = d.risk === 'prudent' ? 4 : d.risk === 'dynamic' ? 8 : 6;
+    if (d.birth_year) {
+      this.age.set(new Date().getFullYear() - d.birth_year);
+      this.set({ years: Math.max(10, Math.min(45, 67 - this.age())) });
+    }
     this.set({
       startCapital: Math.round(d.invested || d.net_worth),
-      monthlyContribution: Math.round(d.monthly_savings) || 300,
+      monthlyContribution: Math.round(d.monthly_invest || d.monthly_savings) || 300,
       monthlyExpense: Math.round(d.monthly_expense) || 2000,
+      annualReturn: ret,
     });
   }
 }

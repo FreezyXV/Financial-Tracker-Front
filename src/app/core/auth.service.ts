@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { Observable, tap } from 'rxjs';
+import { Observable, map, of, tap } from 'rxjs';
 import { ApiService } from './api.service';
 import { User } from './models';
 
@@ -44,6 +44,12 @@ export class AuthService {
 
   register(data: { name: string; email: string; password: string; password_confirmation: string }): Observable<AuthResponse> {
     return this.api.post<AuthResponse>('register', data).pipe(tap((r) => this.store(r)));
+  }
+
+  /** Utilisateur courant, chargé si nécessaire (utilisé par les gardes de route). */
+  ensureUser(): Observable<User> {
+    const u = this.user();
+    return u ? of(u) : this.api.get<User>('me').pipe(tap((x) => this.user.set(x)), map((x) => x));
   }
 
   loadMe(): void {
