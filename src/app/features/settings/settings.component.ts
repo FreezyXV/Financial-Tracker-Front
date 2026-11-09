@@ -102,6 +102,16 @@ interface CatDraft {
           </div>
         </article>
       </section>
+      <section class="sheet danger-zone">
+        <div>
+          <h3>Supprimer mon compte</h3>
+          <p class="small soft">Efface définitivement votre compte, vos comptes bancaires, opérations, placements, budgets et objectifs. Pensez à exporter vos opérations avant.</p>
+        </div>
+        <form class="toolbar" (ngSubmit)="deleteAccount()">
+          <input type="password" name="delpwd" [(ngModel)]="deletePassword" placeholder="Mot de passe" autocomplete="current-password" aria-label="Mot de passe pour confirmer" />
+          <button class="btn danger" type="submit" [disabled]="!deletePassword">Supprimer définitivement</button>
+        </form>
+      </section>
     </div>
 
     <app-modal [open]="!!cat()" [title]="cat()?.id ? 'Modifier la catégorie' : 'Nouvelle catégorie'" (closed)="cat.set(null)">
@@ -133,7 +143,9 @@ interface CatDraft {
       }
     </app-modal>
   `,
-  styles: [`.profile-card{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+  styles: [`.danger-zone{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;border-color:color-mix(in srgb,var(--debit) 40%,var(--rule))}
+    .danger-zone h3{color:var(--debit)}.danger-zone p{max-width:60ch}
+    .profile-card{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
     .grp{font-size:var(--fs-xs);color:var(--ink-3);font-weight:500;margin:var(--sp-3) 0 0}
     .rule-new{display:grid;grid-template-columns:1fr 160px auto;gap:6px;margin:var(--sp-3) 0}
     @media(max-width:560px){.rule-new{grid-template-columns:1fr}}
@@ -150,6 +162,7 @@ export class SettingsComponent implements OnInit {
   profile = { name: '', email: '', savings_rate_target: 20, large_transaction_threshold: 500 };
   pwd = { current_password: '', password: '', password_confirmation: '' };
   rules = signal<Rule[]>([]);
+  deletePassword = '';
   newRule: { pattern: string; category_id: number | null } = { pattern: '', category_id: null };
   cat = signal<CatDraft | null>(null);
 
@@ -206,6 +219,18 @@ export class SettingsComponent implements OnInit {
         this.pwd = { current_password: '', password: '', password_confirmation: '' };
       },
       error: (e) => this.toast.error(e),
+    });
+  }
+
+  deleteAccount(): void {
+    if (!confirm('Supprimer définitivement votre compte et toutes vos données ? Cette action est irréversible.')) return;
+    this.api.deleteWithBody('me', { password: this.deletePassword }).subscribe({
+      next: () => {
+        this.auth.clear();
+        this.toast.show('Compte supprimé.');
+        location.href = '/register';
+      },
+      error: (e) => this.toast.error(e, 'Mot de passe incorrect.'),
     });
   }
 
