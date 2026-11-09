@@ -20,18 +20,46 @@
       </a>
     }
 
-    @if (d.recommendations.length) {
+    @if (showSetup()) {
+      <section class="sheet setup">
+        <div class="sheet-head">
+          <h3>Premiers pas <span class="muted small">· {{ setupDone() }} sur {{ setup().length }}</span></h3>
+          <button class="btn-icon" type="button" (click)="closeSetup()" aria-label="Masquer les premiers pas"><app-icon name="close" size="16" /></button>
+        </div>
+        <div class="gauge ok"><span [style.width.%]="(setupDone() / setup().length) * 100"></span></div>
+        <ul class="setup-list">
+          @for (s of setup(); track s.label) {
+            <li [class.done]="s.done">
+              <span class="tick">@if (s.done) { <app-icon name="check" size="14" /> }</span>
+              <span class="grow">{{ s.label }}</span>
+              @if (!s.done) { <button class="link" type="button" (click)="go(s.route)">{{ s.action }} →</button> }
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    @if (tips().length) {
       <section class="sheet ledger plan">
         <div class="sheet-head"><h3>Votre plan d'action</h3><span class="xs muted">Calculé à partir de votre profil et de vos chiffres réels</span></div>
         <ol class="plan-list">
-          @for (r of d.recommendations; track r.id; let i = $index) {
+          @for (r of visibleTips(); track r.id; let i = $index) {
             <li [attr.data-level]="r.level">
               <span class="num rank">{{ i + 1 }}</span>
               <div class="grow"><strong>{{ r.title }}</strong><p class="small soft">{{ r.text }}</p></div>
-              @if (r.action) { <button class="btn" type="button" (click)="go(r.action.route)">{{ r.action.label }}</button> }
+              <div class="plan-actions">
+                @if (r.action) { <button class="btn" type="button" (click)="go(r.action.route)">{{ r.action.label }}</button> }
+                <button class="btn-icon" type="button" (click)="dismiss(r.id)" [attr.aria-label]="'Masquer : ' + r.title" title="Masquer ce conseil"><app-icon name="close" size="14" /></button>
+              </div>
             </li>
           }
         </ol>
+        <div class="plan-foot">
+          @if (tips().length > 3) {
+            <button class="link" type="button" (click)="showAllTips.set(!showAllTips())">{{ showAllTips() ? 'Réduire' : 'Voir les ' + (tips().length - 3) + ' autres conseils' }}</button>
+          }
+          @if (dismissed().length) { <button class="link muted-link" type="button" (click)="restoreTips()">Réafficher les conseils masqués ({{ dismissed().length }})</button> }
+        </div>
       </section>
     }
 
@@ -92,7 +120,11 @@
     <section class="grid g-main">
       <article class="sheet">
         <div class="sheet-head"><h3>Revenus et dépenses, 12 mois</h3></div>
-        @if (cashChart(); as cfg) { <app-chart [config]="cfg" [height]="250" label="Revenus et dépenses mensuels" /> }
+        @if (hasCashflow()) {
+          @if (cashChart(); as cfg) { <app-chart [config]="cfg" [height]="250" label="Revenus et dépenses mensuels" /> }
+        } @else {
+          <div class="empty">Vos revenus et dépenses apparaîtront ici dès vos premières opérations.<br /><button class="btn" type="button" (click)="go('/transactions')">Importer un relevé</button></div>
+        }
       </article>
       <article class="sheet">
         <div class="sheet-head"><h3>Répartition</h3><a routerLink="/investments">Placements</a></div>

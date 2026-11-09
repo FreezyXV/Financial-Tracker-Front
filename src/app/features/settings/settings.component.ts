@@ -1,3 +1,4 @@
+import { ConfirmService } from '../../core/confirm.service';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -149,12 +150,11 @@ interface CatDraft {
     .grp{font-size:var(--fs-xs);color:var(--ink-3);font-weight:500;margin:var(--sp-3) 0 0}
     .rule-new{display:grid;grid-template-columns:1fr 160px auto;gap:6px;margin:var(--sp-3) 0}
     @media(max-width:560px){.rule-new{grid-template-columns:1fr}}
-    code{font-family:var(--mono);word-break:break-word}
-    .swatches{display:flex;gap:6px;flex-wrap:wrap}
-    .sw{width:24px;height:24px;border-radius:50%;border:2px solid var(--sheet);outline:1px solid var(--rule-strong);cursor:pointer}.sw.on{outline:2px solid var(--ink)}`],
+    code{font-family:var(--mono);word-break:break-word}`],
 })
 export class SettingsComponent implements OnInit {
   private api = inject(ApiService);
+  private confirmDialog = inject(ConfirmService);
   private auth = inject(AuthService);
   private toast = inject(ToastService);
   store = inject(StoreService);
@@ -222,8 +222,8 @@ export class SettingsComponent implements OnInit {
     });
   }
 
-  deleteAccount(): void {
-    if (!confirm('Supprimer définitivement votre compte et toutes vos données ? Cette action est irréversible.')) return;
+  async deleteAccount(): Promise<void> {
+    if (!(await this.confirmDialog.ask('Supprimer définitivement votre compte et toutes vos données ? Cette action est irréversible.'))) return;
     this.api.deleteWithBody('me', { password: this.deletePassword }).subscribe({
       next: () => {
         this.auth.clear();
@@ -268,9 +268,9 @@ export class SettingsComponent implements OnInit {
     req.subscribe({ next: () => { this.cat.set(null); this.store.changed(); }, error: (e) => this.toast.error(e) });
   }
 
-  deleteCat(): void {
+  async deleteCat(): Promise<void> {
     const c = this.cat();
-    if (!c?.id || !confirm(`Supprimer « ${c.name} » ? Les opérations associées deviendront « à classer ».`)) return;
+    if (!c?.id || !(await this.confirmDialog.ask(`Supprimer « ${c.name} » ? Les opérations associées deviendront « à classer ».`))) return;
     this.api.delete(`categories/${c.id}`).subscribe({ next: () => { this.cat.set(null); this.store.changed(); }, error: (e) => this.toast.error(e) });
   }
 }

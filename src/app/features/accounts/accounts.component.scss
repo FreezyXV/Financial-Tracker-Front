@@ -13,6 +13,3 @@
 .acc-value { font-size: var(--fs-xl); font-weight: 500; }
 .acc-meta { display: flex; flex-wrap: wrap; gap: 4px 12px; color: var(--ink-2); }
 .ceil { display: grid; gap: 4px; }
-.swatches { display: flex; gap: 6px; flex-wrap: wrap; }
-.sw { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--sheet); outline: 1px solid var(--rule-strong); cursor: pointer; }
-.sw.on { outline: 2px solid var(--ink); }

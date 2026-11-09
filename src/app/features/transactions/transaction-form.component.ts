@@ -1,3 +1,4 @@
+import { ConfirmService } from '../../core/confirm.service';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/api.service';
@@ -81,6 +82,7 @@ export class TransactionFormComponent implements OnInit {
 
   store = inject(StoreService);
   private api = inject(ApiService);
+  private confirmDialog = inject(ConfirmService);
   private toast = inject(ToastService);
   busy = signal(false);
   draft = signal<TxDraft>({ type: 'expense', amount: null, date: today(), account_id: null, transfer_account_id: null, category_id: null, description: '', notes: '' });
@@ -125,9 +127,9 @@ export class TransactionFormComponent implements OnInit {
     });
   }
 
-  remove(): void {
+  async remove(): Promise<void> {
     const t = this.transaction();
-    if (!t || !confirm('Supprimer cette opération ?')) return;
+    if (!t || !(await this.confirmDialog.ask('Supprimer cette opération ?'))) return;
     this.api.delete(`transactions/${t.id}`).subscribe({
       next: () => {
         this.toast.show('Opération supprimée.');

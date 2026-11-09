@@ -17,6 +17,11 @@ interface NavItem {
   exact?: boolean;
 }
 
+interface NavSection {
+  title: string;
+  items: NavItem[];
+}
+
 @Component({
   selector: 'app-shell',
   imports: [RouterOutlet, RouterLink, RouterLinkActive, IconComponent, ModalComponent, TransactionFormComponent, FrDatePipe],
@@ -29,14 +34,18 @@ interface NavItem {
           <span class="brand-mark" aria-hidden="true"></span>
           <span>Registre</span>
         </a>
-        <nav>
-          @for (n of nav; track n.path) {
-            <a [routerLink]="n.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: !!n.exact }" (click)="navOpen.set(false)">
-              <app-icon [name]="n.icon" /> {{ n.label }}
-            </a>
+        <nav aria-label="Navigation principale">
+          @for (sec of sections; track sec.title) {
+            <span class="nav-title">{{ sec.title }}</span>
+            @for (n of sec.items; track n.path) {
+              <a [routerLink]="n.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: !!n.exact }" (click)="navOpen.set(false)">
+                <app-icon [name]="n.icon" /> {{ n.label }}
+              </a>
+            }
           }
         </nav>
         <div class="side-foot">
+          <a class="side-btn" routerLink="/settings" routerLinkActive="active" (click)="navOpen.set(false)"><app-icon name="settings" /> Réglages</a>
           <button class="side-btn" type="button" (click)="toggleTheme()"><app-icon [name]="theme() === 'dark' ? 'sun' : 'moon'" /> {{ theme() === 'dark' ? 'Thème clair' : 'Thème sombre' }}</button>
           <button class="side-btn" type="button" (click)="auth.logout()"><app-icon name="logout" /> Déconnexion</button>
           <p class="who">{{ auth.user()?.name }}<br /><span>{{ auth.user()?.email }}</span></p>
@@ -102,18 +111,24 @@ export class ShellComponent implements OnInit {
   theme = signal<'light' | 'dark'>(this.initialTheme());
   today = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
-  nav: NavItem[] = [
-    { path: '/', label: 'Synthèse', icon: 'dashboard', exact: true },
-    { path: '/transactions', label: 'Opérations', icon: 'list' },
-    { path: '/accounts', label: 'Comptes', icon: 'wallet' },
-    { path: '/budgets', label: 'Budgets', icon: 'pie' },
-    { path: '/investments', label: 'Placements', icon: 'chart' },
-    { path: '/reports', label: 'Bilans', icon: 'report' },
-    { path: '/goals', label: 'Objectifs', icon: 'target' },
-    { path: '/recurring', label: 'Échéances', icon: 'repeat' },
-    { path: '/simulator', label: 'Projection', icon: 'compass' },
-    { path: '/settings', label: 'Réglages', icon: 'settings' },
+  sections: NavSection[] = [
+    { title: 'Au quotidien', items: [
+      { path: '/', label: 'Synthèse', icon: 'dashboard', exact: true },
+      { path: '/transactions', label: 'Opérations', icon: 'list' },
+      { path: '/budgets', label: 'Budgets', icon: 'pie' },
+      { path: '/recurring', label: 'Échéances', icon: 'repeat' },
+    ] },
+    { title: 'Patrimoine', items: [
+      { path: '/accounts', label: 'Comptes', icon: 'wallet' },
+      { path: '/investments', label: 'Placements', icon: 'chart' },
+      { path: '/goals', label: 'Objectifs', icon: 'target' },
+    ] },
+    { title: 'Analyse', items: [
+      { path: '/reports', label: 'Bilans', icon: 'report' },
+      { path: '/simulator', label: 'Projection', icon: 'compass' },
+    ] },
   ];
+  nav: NavItem[] = this.sections.flatMap((x) => x.items);
   mobileNav = this.nav.filter((n) => ['/', '/transactions', '/investments', '/reports', '/budgets'].includes(n.path));
 
   ngOnInit(): void {

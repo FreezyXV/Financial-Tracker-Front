@@ -1,3 +1,4 @@
+import { ConfirmService } from '../../core/confirm.service';
 import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/api.service';
@@ -78,6 +79,7 @@ export class OperationFormComponent implements OnInit {
   closed = output<void>();
   newAsset = output<void>();
   private api = inject(ApiService);
+  private confirmDialog = inject(ConfirmService);
   private toast = inject(ToastService);
   types = Object.entries(OPERATION_TYPES).map(([key, label]) => ({ key: key as Operation['type'], label }));
   busy = signal(false);
@@ -150,9 +152,9 @@ export class OperationFormComponent implements OnInit {
     });
   }
 
-  remove(): void {
+  async remove(): Promise<void> {
     const o = this.operation();
-    if (!o || !confirm('Supprimer cette opération ?')) return;
+    if (!o || !(await this.confirmDialog.ask('Supprimer cette opération ?'))) return;
     this.api.delete(`operations/${o.id}`).subscribe({ next: () => this.saved.emit(), error: (e) => this.toast.error(e) });
   }
 }

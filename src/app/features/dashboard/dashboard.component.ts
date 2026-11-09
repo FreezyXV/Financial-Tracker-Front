@@ -9,7 +9,9 @@ import { ChartComponent } from '../../shared/chart.component';
 import { cashflowChart, css, doughnutChart, lineChart } from '../../shared/charts';
 import { monthLabel } from '../../shared/format';
 import { IconComponent } from '../../shared/icon.component';
+import { navigateTo } from '../../shared/nav';
 import { PIPES } from '../../shared/pipes';
+import { readJson, writeJson } from '../../shared/storage';
 
 @Component({
   selector: 'app-dashboard',
@@ -43,8 +45,45 @@ export class DashboardComponent {
   }
 
   go(route: string): void {
-    const [path, query] = route.split('?');
-    this.router.navigate([path], { queryParams: Object.fromEntries(new URLSearchParams(query ?? '')) });
+    navigateTo(this.router, route);
+  }
+
+  /* Plan d'action : 3 conseils visibles, les autres à la demande ; masquage mémorisé. */
+  dismissed = signal<string[]>(readJson<string[]>('ft_dismissed_tips', []));
+  showAllTips = signal(false);
+  tips = computed(() => (this.data()?.recommendations ?? []).filter((r) => !this.dismissed().includes(r.id)));
+  visibleTips = computed(() => (this.showAllTips() ? this.tips() : this.tips().slice(0, 3)));
+
+  dismiss(id: string): void {
+    this.dismissed.update((d) => [...d, id]);
+    writeJson('ft_dismissed_tips', this.dismissed());
+  }
+
+  restoreTips(): void {
+    this.dismissed.set([]);
+    writeJson('ft_dismissed_tips', []);
+  }
+
+  /* Premiers pas : guide tant que l'espace n'est pas alimenté. */
+  hideSetup = signal(readJson<boolean>('ft_hide_setup', false));
+  setup = computed(() => {
+    const d = this.data();
+    if (!d) return [];
+    return [
+      { done: d.net_worth.by_account.length > 0, label: 'Déclarer vos comptes et leurs soldes', route: '/accounts', action: 'Comptes' },
+      { done: d.recent.length > 0, label: 'Importer un relevé bancaire (CSV)', route: '/transactions', action: 'Importer' },
+      { done: d.budgets.length > 0, label: 'Fixer vos premiers budgets', route: '/budgets', action: 'Budgets' },
+      { done: d.goals.length > 0, label: 'Définir un objectif d’épargne', route: '/goals', action: 'Objectifs' },
+      { done: d.portfolio.value > 0, label: 'Ajouter vos placements (PEA, CTO, crypto)', route: '/investments', action: 'Placements' },
+    ];
+  });
+  setupDone = computed(() => this.setup().filter((s) => s.done).length);
+  showSetup = computed(() => !this.hideSetup() && this.setup().length > 0 && this.setupDone() < this.setup().length);
+  hasCashflow = computed(() => (this.data()?.cashflow ?? []).some((m) => m.income > 0 || m.expense > 0));
+
+  closeSetup(): void {
+    this.hideSetup.set(true);
+    writeJson('ft_hide_setup', true);
   }
 
   historyChart = computed(() => {

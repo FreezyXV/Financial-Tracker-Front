@@ -1,3 +1,4 @@
+import { ConfirmService } from '../../core/confirm.service';
 import { ChangeDetectionStrategy, Component, OnInit, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/api.service';
@@ -77,6 +78,7 @@ export class AssetFormComponent implements OnInit {
   saved = output<Asset>();
   closed = output<void>();
   private api = inject(ApiService);
+  private confirmDialog = inject(ConfirmService);
   private toast = inject(ToastService);
   classes = Object.entries(ASSET_CLASSES).filter(([k]) => !['cash', 'real_estate'].includes(k)).map(([key, v]) => ({ key, label: v.label }));
   q = signal('');
@@ -131,9 +133,9 @@ export class AssetFormComponent implements OnInit {
     });
   }
 
-  remove(): void {
+  async remove(): Promise<void> {
     const a = this.asset();
-    if (!a || !confirm(`Supprimer ${a.symbol} et toutes ses opérations ?`)) return;
+    if (!a || !(await this.confirmDialog.ask(`Supprimer ${a.symbol} et toutes ses opérations ?`))) return;
     this.api.delete(`assets/${a.id}`).subscribe({ next: () => this.saved.emit(a), error: (e) => this.toast.error(e) });
   }
 }

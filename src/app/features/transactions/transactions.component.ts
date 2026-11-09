@@ -1,3 +1,4 @@
+import { ConfirmService } from '../../core/confirm.service';
 import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -29,6 +30,7 @@ interface Filters {
 })
 export class TransactionsComponent implements OnInit {
   private api = inject(ApiService);
+  private confirmDialog = inject(ConfirmService);
   private route = inject(ActivatedRoute);
   private toast = inject(ToastService);
   store = inject(StoreService);
@@ -138,10 +140,10 @@ export class TransactionsComponent implements OnInit {
     });
   }
 
-  bulk(action: 'categorize' | 'delete'): void {
+  async bulk(action: 'categorize' | 'delete'): Promise<void> {
     const ids = [...this.selected()];
     if (!ids.length) return;
-    if (action === 'delete' && !confirm(`Supprimer ${ids.length} opération(s) ?`)) return;
+    if (action === 'delete' && !(await this.confirmDialog.ask(`Supprimer ${ids.length} opération(s) ?`))) return;
     if (action === 'categorize' && !this.bulkCategory) return;
     this.api.post<{ affected: number }>('transactions/bulk', { ids, action, category_id: this.bulkCategory }).subscribe({
       next: (r) => {

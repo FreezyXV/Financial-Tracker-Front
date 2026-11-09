@@ -8,6 +8,7 @@ import { FinancialProfile, Recommendation, User } from '../../core/models';
 import { StoreService } from '../../core/store.service';
 import { ToastService } from '../../core/toast.service';
 import { IconComponent } from '../../shared/icon.component';
+import { navigateTo } from '../../shared/nav';
 import { PIPES } from '../../shared/pipes';
 
 interface Choice<T extends string = string> {
@@ -252,8 +253,6 @@ export class OnboardingComponent implements OnInit {
   }
 
   go(route: string): void {
-    const [path, query] = route.split('?');
-    const queryParams = Object.fromEntries(new URLSearchParams(query ?? ''));
-    this.router.navigate([path], { queryParams });
+    navigateTo(this.router, route);
   }
 }

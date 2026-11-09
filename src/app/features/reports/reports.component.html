@@ -9,9 +9,9 @@
         <button type="button" [class.on]="mode() === 'month'" (click)="mode.set('month')">Mensuel</button>
         <button type="button" [class.on]="mode() === 'year'" (click)="mode.set('year')">Annuel</button>
       </div>
-      <div class="period">
+      <div class="period-nav">
         <button class="btn-icon" type="button" (click)="shift(-1)" aria-label="Période précédente"><app-icon name="chevronLeft" /></button>
-        <strong class="cap">{{ mode() === 'month' ? monthName(month()) : year() }}</strong>
+        <strong>{{ mode() === 'month' ? monthName(month()) : year() }}</strong>
         <button class="btn-icon" type="button" (click)="shift(1)" aria-label="Période suivante"><app-icon name="chevronRight" /></button>
       </div>
       <button class="btn" type="button" (click)="print()"><app-icon name="download" size="16" /> PDF</button>

@@ -1,3 +1,4 @@
+import { ConfirmService } from '../../core/confirm.service';
 import { ChangeDetectionStrategy, Component, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/api.service';
@@ -103,13 +104,11 @@ interface GoalDraft {
     .ring{--p:0;--c:var(--ink);width:96px;height:96px;border-radius:50%;display:grid;place-items:center;
       background:conic-gradient(var(--c) calc(var(--p) * 1%),var(--sheet-2) 0);position:relative}
     .ring::before{content:'';position:absolute;inset:9px;border-radius:50%;background:var(--sheet)}
-    .ring span{position:relative;font-size:var(--fs-lg)}
-    .swatches{display:flex;gap:6px;flex-wrap:wrap}
-    .sw{width:24px;height:24px;border-radius:50%;border:2px solid var(--sheet);outline:1px solid var(--rule-strong);cursor:pointer}
-    .sw.on{outline:2px solid var(--ink)}`],
+    .ring span{position:relative;font-size:var(--fs-lg)}`],
 })
 export class GoalsComponent {
   private api = inject(ApiService);
+  private confirmDialog = inject(ConfirmService);
   private toast = inject(ToastService);
   store = inject(StoreService);
   goals = signal<Goal[]>([]);
@@ -151,9 +150,9 @@ export class GoalsComponent {
     req.subscribe({ next: () => { this.draft.set(null); this.toast.show('Objectif enregistré.'); this.load(); }, error: (e) => this.toast.error(e) });
   }
 
-  remove(): void {
+  async remove(): Promise<void> {
     const d = this.draft();
-    if (!d?.id || !confirm('Supprimer cet objectif ?')) return;
+    if (!d?.id || !(await this.confirmDialog.ask('Supprimer cet objectif ?'))) return;
     this.api.delete(`goals/${d.id}`).subscribe({ next: () => { this.draft.set(null); this.load(); }, error: (e) => this.toast.error(e) });
   }
 }

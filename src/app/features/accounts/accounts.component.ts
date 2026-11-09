@@ -1,3 +1,4 @@
+import { ConfirmService } from '../../core/confirm.service';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -35,6 +36,7 @@ const GROUP_ORDER = ['liquidites', 'epargne', 'investissements', 'crypto', 'immo
 })
 export class AccountsComponent {
   private api = inject(ApiService);
+  private confirmDialog = inject(ConfirmService);
   private toast = inject(ToastService);
   store = inject(StoreService);
   onboarding = !!inject(ActivatedRoute).snapshot.queryParamMap.get('onboarding');
@@ -105,9 +107,9 @@ export class AccountsComponent {
     });
   }
 
-  remove(): void {
+  async remove(): Promise<void> {
     const d = this.draft();
-    if (!d?.id || !confirm(`Supprimer « ${d.name} » et toutes ses opérations ? Préférez l'archivage pour garder l'historique.`)) return;
+    if (!d?.id || !(await this.confirmDialog.ask(`Supprimer « ${d.name} » et toutes ses opérations ? Préférez l'archivage pour garder l'historique.`))) return;
     this.api.delete(`accounts/${d.id}`).subscribe({
       next: () => {
         this.toast.show('Compte supprimé.');

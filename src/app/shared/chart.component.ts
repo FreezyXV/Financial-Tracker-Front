@@ -1,7 +1,12 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, OnDestroy, effect, input, viewChild } from '@angular/core';
-import { Chart, ChartConfiguration, ChartType, registerables } from 'chart.js';
+import {
+  ArcElement, BarController, BarElement, CategoryScale, Chart, ChartConfiguration, ChartType, DoughnutController,
+  Filler, Legend, LineController, LineElement, LinearScale, PointElement, Tooltip,
+} from 'chart.js';
 
-Chart.register(...registerables);
+// Enregistrement à la carte : courbes, barres et anneaux uniquement (bundle allégé).
+Chart.register(LineController, BarController, DoughnutController, LineElement, BarElement, ArcElement, PointElement,
+  CategoryScale, LinearScale, Filler, Legend, Tooltip);
 
 function cssVar(name: string, fallback: string): string {
   const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();

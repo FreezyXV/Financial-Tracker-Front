@@ -404,3 +404,23 @@ hr.rule { border: 0; border-top: 1px solid var(--rule); margin: var(--sp-3) 0; }
   .page { padding: 0; max-width: none; }
   .sheet { box-shadow: none; break-inside: avoid; }
 }
+
+/* ---------- Composants partagés ---------- */
+.period-nav { display: flex; align-items: center; gap: 4px; }
+.period-nav strong { text-transform: capitalize; min-width: 130px; text-align: center; font-size: var(--fs-md); }
+.swatches { display: flex; gap: 6px; flex-wrap: wrap; }
+.sw { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--sheet); outline: 1px solid var(--rule-strong); cursor: pointer; padding: 0; }
+.sw.on { outline: 2px solid var(--ink); }
+.btn.danger-solid { background: var(--debit); border-color: var(--debit); color: #fff; }
+.btn.danger-solid:hover { opacity: 0.92; }
+.btn:active:not(:disabled) { transform: translateY(1px); }
+
+/* Champs numériques sans flèches : saisie plus propre */
+input[type='number'] { -moz-appearance: textfield; appearance: textfield; }
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* Respect des préférences d'animation */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

@@ -1,3 +1,4 @@
+import { ConfirmService } from '../../core/confirm.service';
 import { ChangeDetectionStrategy, Component, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
@@ -154,6 +155,7 @@ interface RecDraft {
 })
 export class RecurringComponent {
   private api = inject(ApiService);
+  private confirmDialog = inject(ConfirmService);
   private toast = inject(ToastService);
   store = inject(StoreService);
   list = signal<RecurringList | null>(null);
@@ -200,9 +202,9 @@ export class RecurringComponent {
     req.subscribe({ next: () => { this.draft.set(null); this.toast.show('Échéance enregistrée.'); this.store.changed(); }, error: (e) => this.toast.error(e) });
   }
 
-  remove(): void {
+  async remove(): Promise<void> {
     const d = this.draft();
-    if (!d?.id || !confirm('Supprimer cette échéance ? Les opérations déjà passées sont conservées.')) return;
+    if (!d?.id || !(await this.confirmDialog.ask('Supprimer cette échéance ? Les opérations déjà passées sont conservées.'))) return;
     this.api.delete(`recurring/${d.id}`).subscribe({ next: () => { this.draft.set(null); this.load(); }, error: (e) => this.toast.error(e) });
   }
 

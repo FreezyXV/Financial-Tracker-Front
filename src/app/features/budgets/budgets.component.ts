@@ -1,3 +1,4 @@
+import { ConfirmService } from '../../core/confirm.service';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
@@ -32,9 +33,9 @@ interface BudgetDraft {
           <p>Une enveloppe mensuelle par catégorie. La projection estime la dépense de fin de mois au rythme actuel ; le report ajoute le reliquat du mois précédent.</p>
         </div>
         <div class="actions">
-          <div class="month-nav">
+          <div class="period-nav">
             <button class="btn-icon" type="button" (click)="shift(-1)" aria-label="Mois précédent"><app-icon name="chevronLeft" /></button>
-            <strong class="cap">{{ label() }}</strong>
+            <strong>{{ label() }}</strong>
             <button class="btn-icon" type="button" (click)="shift(1)" aria-label="Mois suivant"><app-icon name="chevronRight" /></button>
           </div>
           <button class="btn primary" type="button" (click)="open()"><app-icon name="plus" size="16" /> Nouveau budget</button>
@@ -118,11 +119,11 @@ interface BudgetDraft {
       }
     </app-modal>
   `,
-  styles: [`.month-nav{display:flex;align-items:center;gap:4px}.cap{text-transform:capitalize;min-width:130px;text-align:center}
-    td .gauge{margin-bottom:2px}@media(max-width:640px){.hide-sm{display:none}}`],
+  styles: [`td .gauge{margin-bottom:2px}@media(max-width:640px){.hide-sm{display:none}}`],
 })
 export class BudgetsComponent {
   private api = inject(ApiService);
+  private confirmDialog = inject(ConfirmService);
   private toast = inject(ToastService);
   store = inject(StoreService);
   month = signal(currentMonth());
@@ -189,9 +190,9 @@ export class BudgetsComponent {
     req.subscribe({ next: () => { this.toast.show('Budget enregistré.'); this.draft.set(null); this.load(); }, error: (e) => this.toast.error(e) });
   }
 
-  remove(): void {
+  async remove(): Promise<void> {
     const d = this.draft();
-    if (!d?.id || !confirm('Supprimer ce budget ?')) return;
+    if (!d?.id || !(await this.confirmDialog.ask('Supprimer ce budget ?'))) return;
     this.api.delete(`budgets/${d.id}`).subscribe({ next: () => { this.draft.set(null); this.load(); }, error: (e) => this.toast.error(e) });
   }
 }
